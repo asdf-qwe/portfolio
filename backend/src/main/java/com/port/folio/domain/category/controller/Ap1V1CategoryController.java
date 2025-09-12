@@ -7,6 +7,7 @@ import com.port.folio.domain.category.repository.CategoryRepository;
 import com.port.folio.domain.category.service.CategoryService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,5 +28,11 @@ public class Ap1V1CategoryController {
     public ResponseEntity<List<CategoryResponse>> categoryList(@RequestParam Long userId) {
         List<CategoryResponse> categories = categoryService.getCategories(userId);
         return ResponseEntity.ok(categories);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<String> deleteCategory(@RequestParam Long categoryId){
+        categoryService.deleteCategory(categoryId);
+        return ResponseEntity.ok("삭제 되었습니다");
     }
 }

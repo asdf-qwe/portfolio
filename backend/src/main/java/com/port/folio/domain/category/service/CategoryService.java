@@ -38,4 +38,11 @@ public class CategoryService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    public void deleteCategory (Long categoryId) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(()-> new IllegalArgumentException("카테고리가 없습니다"));
+
+        categoryRepository.delete(category);
+    }
 }

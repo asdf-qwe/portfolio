@@ -2,10 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { notFound } from "next/navigation";
 import ProjectHeader from "@/components/ProjectHeader";
 import ResourceManager from "@/components/ResourceManager";
-import { getProjectData } from "@/constants/projectsData";
 import { createPost, getPosts } from "@/features/post/service/postService";
 import { CreatePostDto } from "@/features/post/types/post";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -37,22 +35,18 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const isOwner = isLoggedIn && user && user.id?.toString() === userId;
   const canEdit = isOwner;
 
-  // 프로젝트 데이터 가져오기 (하드코딩된 데이터 사용)
-  const projectData = getProjectData(categoryId);
-
   useEffect(() => {
     const fetchCategory = async () => {
       try {
         setLoading(true);
 
-        // 방법 1: postService로 해당 카테고리의 게시글 존재 여부 확인
+        // 게시글 가져오기 시도
         try {
           await getPosts(parseInt(categoryId));
           // 게시글이 존재하면 카테고리가 유효하다고 판단
-          const projectData = getProjectData(categoryId);
           setCategory({
             id: parseInt(categoryId),
-            categoryTitle: projectData?.title || `프로젝트 ${categoryId}`,
+            categoryTitle: `카테고리 ${categoryId}`,
             createdAt: "",
             updatedAt: "",
           });
@@ -83,11 +77,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
     fetchCategory();
   }, [categoryId, user?.id]);
-
-  // 존재하지 않는 프로젝트인 경우 404 페이지 표시
-  if (!projectData) {
-    notFound();
-  }
 
   if (loading) {
     return (
@@ -135,7 +124,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     setIsEditMode(!isEditMode);
     if (!isEditMode && !introContent) {
       // 편집 모드로 진입 시 빈 템플릿 설정 (최초 편집 시에만)
-      setIntroContent(`# ${projectData.title}
+      setIntroContent(`# ${category?.categoryTitle || `카테고리 ${categoryId}`}
 
 ## 프로젝트 개요
 여기에 프로젝트에 대한 설명을 작성해주세요.
@@ -159,12 +148,14 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       setIsSaving(true);
 
       const postData: CreatePostDto = {
-        title: `${projectData.title} - 프로젝트 소개`,
+        title: `${
+          category?.categoryTitle || `카테고리 ${categoryId}`
+        } - 프로젝트 소개`,
         content: introContent,
         imageUrl: "", // 이미지 URL은 빈 문자열로 설정
       };
 
-      await createPost(postData, projectData.categoryId);
+      await createPost(postData, parseInt(categoryId));
 
       setIsEditMode(false);
       alert("프로젝트 소개가 저장되었습니다!");
@@ -173,6 +164,31 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       alert("저장에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // 카테고리 삭제 기능
+  const handleDeleteCategory = async () => {
+    if (!canEdit) {
+      alert("삭제 권한이 없습니다.");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `정말로 "${
+        category?.categoryTitle || `카테고리 ${categoryId}`
+      }"을(를) 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await categoryService.deleteCategory(parseInt(categoryId));
+      alert("카테고리가 성공적으로 삭제되었습니다.");
+      router.push(`/main/home/${userId}`);
+    } catch (error) {
+      console.error("카테고리 삭제 실패:", error);
+      alert("카테고리 삭제에 실패했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -195,7 +211,9 @@ export default function CategoryPage({ params }: CategoryPageProps) {
           <div className="bg-white p-12 rounded-lg shadow-sm">
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h1 className="text-4xl font-bold">{projectData.title}</h1>
+                <h1 className="text-4xl font-bold">
+                  {category?.categoryTitle || `카테고리 ${categoryId}`}
+                </h1>
                 <p className="text-sm text-gray-500 mt-2">
                   소유자: User {userId}
                 </p>
@@ -205,16 +223,26 @@ export default function CategoryPage({ params }: CategoryPageProps) {
               </div>
               <div className="flex items-center gap-4">
                 {canEdit && (
-                  <span className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
-                    내 프로젝트
-                  </span>
+                  <button
+                    onClick={handleDeleteCategory}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                    삭제
+                  </button>
                 )}
-                <button
-                  onClick={() => router.push(`/main/home/${userId}`)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  ← 홈으로
-                </button>
               </div>
             </div>
 
@@ -343,45 +371,31 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
                       {/* 동영상 플레이어 - 편집 중에도 표시 */}
                       <div className="md:col-span-3 rounded-xl overflow-hidden shadow-lg bg-gray-50">
-                        {projectData.videoSrc ? (
-                          // 비디오가 있는 경우
-                          <div className="aspect-[16/9]">
-                            <video
-                              className="w-full h-full object-cover"
-                              controls
-                              poster={projectData.imageSrc}
+                        {/* 비디오 플레이스홀더 */}
+                        <div className="aspect-[16/9] bg-gray-200 flex items-center justify-center">
+                          <div className="text-center p-8">
+                            <svg
+                              className="w-16 h-16 text-gray-400 mx-auto mb-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
                             >
-                              <source
-                                src={projectData.videoSrc}
-                                type="video/mp4"
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
                               />
-                              브라우저가 비디오 재생을 지원하지 않습니다.
-                            </video>
+                            </svg>
+                            <p className="text-gray-500">데모 영상 준비중</p>
                           </div>
-                        ) : (
-                          // 비디오가 없는 경우 플레이스홀더
-                          <div className="aspect-[16/9] bg-gray-200 flex items-center justify-center">
-                            <div className="text-center p-8">
-                              <svg
-                                className="w-16 h-16 text-gray-400 mx-auto mb-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                                />
-                              </svg>
-                              <p className="text-gray-500">데모 영상 준비중</p>
-                            </div>
-                          </div>
-                        )}
+                        </div>
                         <div className="p-4">
                           <p className="text-sm text-gray-600">
-                            ▶️ {projectData.title} 데모 영상
+                            ▶️{" "}
+                            {category?.categoryTitle ||
+                              `카테고리 ${categoryId}`}{" "}
+                            데모 영상
                           </p>
                         </div>
                       </div>
@@ -451,45 +465,31 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
                       {/* 동영상 플레이어 - 항상 표시 */}
                       <div className="md:col-span-3 rounded-xl overflow-hidden shadow-lg bg-gray-50">
-                        {projectData.videoSrc ? (
-                          // 비디오가 있는 경우
-                          <div className="aspect-[16/9]">
-                            <video
-                              className="w-full h-full object-cover"
-                              controls
-                              poster={projectData.imageSrc}
+                        {/* 비디오 플레이스홀더 */}
+                        <div className="aspect-[16/9] bg-gray-200 flex items-center justify-center">
+                          <div className="text-center p-8">
+                            <svg
+                              className="w-16 h-16 text-gray-400 mx-auto mb-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
                             >
-                              <source
-                                src={projectData.videoSrc}
-                                type="video/mp4"
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
                               />
-                              브라우저가 비디오 재생을 지원하지 않습니다.
-                            </video>
+                            </svg>
+                            <p className="text-gray-500">데모 영상 준비중</p>
                           </div>
-                        ) : (
-                          // 비디오가 없는 경우 플레이스홀더
-                          <div className="aspect-[16/9] bg-gray-200 flex items-center justify-center">
-                            <div className="text-center p-8">
-                              <svg
-                                className="w-16 h-16 text-gray-400 mx-auto mb-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                                />
-                              </svg>
-                              <p className="text-gray-500">데모 영상 준비중</p>
-                            </div>
-                          </div>
-                        )}
+                        </div>
                         <div className="p-4">
                           <p className="text-sm text-gray-600">
-                            ▶️ {projectData.title} 데모 영상
+                            ▶️{" "}
+                            {category?.categoryTitle ||
+                              `카테고리 ${categoryId}`}{" "}
+                            데모 영상
                           </p>
                         </div>
                       </div>
@@ -501,66 +501,53 @@ export default function CategoryPage({ params }: CategoryPageProps) {
               {/* 주요 기능 */}
               {activeTab === "features" && (
                 <div>
-                  <ul className="space-y-6">
-                    {projectData.detailedFeatures.map((feature, index) => (
-                      <li key={index} className="flex items-start gap-4">
-                        <div className="bg-blue-100 p-3 rounded-lg">
-                          <svg
-                            className="w-6 h-6 text-blue-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d={feature.icon}
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold">
-                            {feature.title}
-                          </h3>
-                          <p className="text-gray-600">{feature.description}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="text-center py-12">
+                    <svg
+                      className="w-16 h-16 text-gray-400 mx-auto mb-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                      />
+                    </svg>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      기능 정보
+                    </h3>
+                    <p className="text-gray-500">
+                      편집 모드에서 기능을 추가할 수 있습니다.
+                    </p>
+                  </div>
                 </div>
               )}
 
               {/* 기술 스택 */}
               {activeTab === "tech" && (
                 <div>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-gray-50 p-6 rounded-lg">
-                      <h3 className="text-lg font-semibold mb-4">프론트엔드</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {projectData.frontendTech.map((tech) => (
-                          <span
-                            key={tech}
-                            className="px-3 py-1 bg-blue-100 text-blue-500 rounded-full text-sm"
-                          >
-                            {tech}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 p-6 rounded-lg">
-                      <h3 className="text-lg font-semibold mb-4">백엔드</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {projectData.backendTech.map((tech) => (
-                          <span
-                            key={tech}
-                            className="px-3 py-1 bg-blue-100 text-blue-500 rounded-full text-sm"
-                          >
-                            {tech}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                  <div className="text-center py-12">
+                    <svg
+                      className="w-16 h-16 text-gray-400 mx-auto mb-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                      />
+                    </svg>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      기술 스택
+                    </h3>
+                    <p className="text-gray-500">
+                      편집 모드에서 기술 스택을 추가할 수 있습니다.
+                    </p>
                   </div>
                 </div>
               )}
@@ -581,7 +568,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                   <button
                     onClick={() => {
                       router.push(
-                        `/main/post?returnTo=/main/home/${userId}/category/${categoryId}&categoryId=${projectData.categoryId}`
+                        `/main/post?returnTo=/main/home/${userId}/category/${categoryId}&categoryId=${categoryId}`
                       );
                     }}
                     className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"

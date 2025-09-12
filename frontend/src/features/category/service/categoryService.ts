@@ -142,23 +142,29 @@ export class CategoryService {
   /**
    * 카테고리 삭제
    * @param categoryId 삭제할 카테고리 ID
-   * @returns Promise<void>
+   * @returns Promise<string>
    */
-  async deleteCategory(categoryId: number): Promise<void> {
+  async deleteCategory(categoryId: number): Promise<string> {
     try {
-      const response = await fetch(`${API_BASE_URL}/category/${categoryId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/category?categoryId=${categoryId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
+      );
 
       if (!response.ok) {
         throw new Error(
           `카테고리 삭제 실패: ${response.status} ${response.statusText}`
         );
       }
+
+      const result = await response.text();
+      return result;
     } catch (error) {
       console.error("카테고리 삭제 중 오류 발생:", error);
       throw error;

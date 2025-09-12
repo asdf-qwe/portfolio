@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import Button from "@/features/auth/components/Button";
+import { categoryService } from "@/features/category/service/categoryService";
+import { CategoryResponse } from "@/features/category/types/category";
 
 interface HomePageProps {
   params: Promise<{
@@ -16,6 +18,30 @@ export default function HomePage({ params }: HomePageProps) {
   const resolvedParams = React.use(params);
   const { isLoggedIn, user, logout, isLoading } = useAuth();
   const userId = resolvedParams.id;
+
+  // 카테고리 상태 관리
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // 카테고리 데이터 가져오기
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const categoriesData = await categoryService.getCategories(
+          parseInt(userId)
+        );
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("카테고리 조회 실패:", error);
+        setCategories([]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, [userId]);
 
   const handleLogout = async () => {
     try {
@@ -38,31 +64,6 @@ export default function HomePage({ params }: HomePageProps) {
     backend: ["Spring Boot", "Node.js", "MySQL", "MongoDB"],
     tools: ["Git", "Docker", "AWS", "Figma"],
   };
-
-  // 주요 프로젝트 데이터
-  const featuredProjects = [
-    {
-      title: "부트캠프 회고용 블로그",
-      description:
-        "Next.js와 Spring Boot를 활용한 포트폴리오 및 회고용 서비스. 포트폴리오 제출 시 이 사이트만 활용하면 되게 기획. 게시글 CRUD, 이미지 업로드, 반응형 디자인 구현",
-      tech: ["Next.js", "Spring Boot", "TypeScript", "Tailwind CSS"],
-      image: "/project1.png",
-    },
-    {
-      title: "엔터사 특화 그룹웨어",
-      description:
-        "WebSocket을 활용한 실시간 채팅 기능, 파일 공유, 풀 캘린더 이용 일정관리, 자체 계약 서비스 로직 구현으로 자동화된 계약 관리와 정산관리",
-      tech: ["React", "Node.js", "Socket.io", "MongoDB"],
-      image: "/project2.png",
-    },
-    {
-      title: "링크 관리 서비스",
-      description:
-        "redis를 이용해 캐시로 불필요한 DB요청 줄이고 비동기 큐, 워커를 이용해 트래픽 처리, 웹소켓으로 동시 작업 기능 제공, opengraph api를 이용해 자동화된 링크 정보 제공, youtube api를 이용해 자동 재생 및 재생목록 기능 제공",
-      tech: ["Vue.js", "Python", "FastAPI", "OpenAI"],
-      image: "/project3.png",
-    },
-  ];
 
   // 접근 권한 체크
   const isOwner = isLoggedIn && user && user.id?.toString() === userId;
@@ -271,55 +272,96 @@ export default function HomePage({ params }: HomePageProps) {
             )}
           </div>
           <div className="grid md:grid-cols-3 gap-8">
-            {featuredProjects.map((project, index) => (
-              <Link
-                href={`/main/home/${userId}/category/${index + 1}`}
-                key={index}
-                className="block"
-              >
-                <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="relative h-48">
-                    <Image
-                      src={project.image}
-                      alt={project.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      quality={95}
-                      priority={index === 0}
-                      style={{
-                        objectFit: "cover",
-                        objectPosition: "center",
-                      }}
-                      className="hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
+            {categoriesLoading ? (
+              // 로딩 중일 때 스켈레톤 표시
+              Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-lg shadow-md overflow-hidden"
+                >
+                  <div className="h-48 bg-gray-200 animate-pulse"></div>
                   <div className="p-6">
-                    <h3 className="text-xl font-semibold mb-2">
-                      {project.title}
-                    </h3>
-                    <p className="text-gray-600 mb-4">{project.description}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {project.tech.map((tech) => (
-                        <span
-                          key={tech}
-                          className="px-3 py-1 bg-blue-100 text-blue-500 rounded-full text-sm"
-                        >
-                          {tech}
-                        </span>
-                      ))}
+                    <div className="h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse mb-4"></div>
+                    <div className="flex gap-2">
+                      <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse"></div>
+                      <div className="h-6 w-20 bg-gray-200 rounded-full animate-pulse"></div>
                     </div>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-          <div className="text-center mt-12">
-            <Link
-              href="/main/post"
-              className="inline-block px-8 py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
-            >
-              모든 프로젝트 보기
-            </Link>
+              ))
+            ) : categories.length > 0 ? (
+              // 카테고리가 있을 때
+              categories.map((category) => (
+                <Link
+                  href={`/main/home/${userId}/category/${category.id}`}
+                  key={category.id}
+                  className="block"
+                >
+                  <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                    <div className="relative h-48">
+                      <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                        <div className="text-center text-white">
+                          <svg
+                            className="w-16 h-16 mx-auto mb-2 opacity-80"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                            />
+                          </svg>
+                          <p className="text-sm opacity-80">프로젝트</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold mb-2">
+                        {category.categoryTitle}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        프로젝트에 대한 자세한 내용을 확인해보세요.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-500 rounded-full text-sm">
+                          프로젝트
+                        </span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm">
+                          {new Date(category.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              // 카테고리가 없을 때
+              <div className="col-span-3 text-center py-12">
+                <svg
+                  className="w-16 h-16 text-gray-400 mx-auto mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  아직 프로젝트가 없습니다
+                </h3>
+                <p className="text-gray-500">
+                  첫 번째 프로젝트를 만들어보세요!
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
