@@ -2,6 +2,7 @@ package com.port.folio.domain.user.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.port.folio.domain.category.entity.Category;
+import com.port.folio.domain.post.entity.File;
 import com.port.folio.global.Jpa.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,6 +41,10 @@ public class User extends BaseEntity {
 
     @Column(name = "image_url", length = 255)
     private String imageUrl;
+    
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_image_id")
+    private File profileImage;
 
     @Column(name = "refresh_token", length = 255)
     private String refreshToken;

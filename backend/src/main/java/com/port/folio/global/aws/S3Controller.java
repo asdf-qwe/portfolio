@@ -1,10 +1,6 @@
 package com.port.folio.global.aws;
 
 
-import com.port.folio.domain.category.entity.Category;
-import com.port.folio.domain.category.repository.CategoryRepository;
-import com.port.folio.domain.post.entity.File;
-import com.port.folio.domain.post.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,32 +14,41 @@ import java.util.List;
 public class S3Controller {
 
     private final S3Service s3Service;
-    private final FileRepository fileRepository;
-    private final CategoryRepository categoryRepository;
 
+    // ✅ 일반 자료 업로드
     @PostMapping("/upload")
     public String uploadFile(@RequestParam("file") MultipartFile file,
                              @RequestParam Long categoryId) throws IOException {
-        // 1) S3에 업로드
-        String key = s3Service.uploadFile(file, categoryId);
-
-        // 2) DB 저장 (카테고리 연관)
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new IllegalArgumentException("카테고리가 없습니다"));
-
-        File fileEntity = File.builder()
-                .url(key) // 실제 저장되는 건 S3 key
-                .category(category)
-                .build();
-
-        fileRepository.save(fileEntity);
-
-        // 3) 업로드한 파일 바로 접근할 수 있는 presigned URL 리턴
-        return s3Service.generatePresignedUrl(key);
+        return s3Service.uploadFile(file, "files/" + categoryId);
     }
 
+    // ✅ 유저 프로필 이미지 업로드
+    @PostMapping("/upload/profile-image")
+    public String uploadProfileImage(@RequestParam("file") MultipartFile file,
+                                     @RequestParam Long userId) throws IOException {
+        return s3Service.uploadProfileImage(file, userId);
+    }
+
+    // ✅ 카테고리 대표 동영상 업로드
+    @PostMapping("/upload/main-video")
+    public String uploadMainVideo(@RequestParam("file") MultipartFile file,
+                                  @RequestParam Long categoryId) throws IOException {
+        return s3Service.uploadMainVideo(file, categoryId);
+    }
+
+    // ✅ 조회
     @GetMapping("/category/{categoryId}")
     public List<String> getFilesByCategory(@PathVariable Long categoryId) {
         return s3Service.getUrlsByCategory(categoryId);
+    }
+
+    @GetMapping("/user/{userId}/profile-image")
+    public String getUserProfileImage(@PathVariable Long userId) {
+        return s3Service.getUserProfileImage(userId);
+    }
+
+    @GetMapping("/category/{categoryId}/main-video")
+    public String getMainVideoByCategory(@PathVariable Long categoryId) {
+        return s3Service.getMainVideoByCategory(categoryId);
     }
 }

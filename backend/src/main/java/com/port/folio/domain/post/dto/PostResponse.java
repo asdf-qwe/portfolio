@@ -13,7 +13,6 @@ public class PostResponse {
     private String title;
     private String content;
     private String imageUrl;
-    private int views;
 
 
 }

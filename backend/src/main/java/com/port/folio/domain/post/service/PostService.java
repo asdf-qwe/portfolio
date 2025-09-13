@@ -7,6 +7,9 @@ import com.port.folio.domain.post.dto.PostListDto;
 import com.port.folio.domain.post.dto.PostResponse;
 import com.port.folio.domain.post.entity.Post;
 import com.port.folio.domain.post.repository.PostRepository;
+import com.port.folio.domain.tab.dto.TabRes;
+import com.port.folio.domain.tab.entity.Tab;
+import com.port.folio.domain.tab.repository.TabRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,16 +23,19 @@ import java.util.stream.Collectors;
 public class PostService {
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
+    private final TabRepository tabRepository;
 
-    public Post createPost(CreatePostDto dto, Long categoryId) {
+    public Post createPost(CreatePostDto dto, Long categoryId, Long tabId) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("카테고리가 없습니다"));
+        Tab tab = tabRepository.findById(tabId).orElseThrow(()->new IllegalArgumentException("탭이 없습니다"));
 
         Post post = Post.builder()
                 .title(dto.getTitle())
                 .content(dto.getContent())
                 .imageUrl(dto.getImageUrl())
                 .category(category)
+                .tab(tab)
                 .build();
 
         return postRepository.save(post);
@@ -46,12 +52,28 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
-    public PostResponse getPost(Long postId) {
+    public PostResponse getPost(Long tabId) {
+        Post post = postRepository.findByTabId(tabId);
 
-        Post post = postRepository.findById(postId).orElseThrow(() -> new IllegalArgumentException("게시글이 없습니다"));
+        if (post == null) {
+            return new PostResponse(null, null, null); // 빈 응답
+        }
 
-        post.setViews(post.getViews() + 1);
+        return new PostResponse(
+                post.getTitle(),
+                post.getContent(),
+                post.getImageUrl()
+        );
+    }
+
+    public String updatePost(CreatePostDto dto, Long tabId) {
+        Post post = postRepository.findByTabId(tabId);
+
+        post.setTitle(dto.getTitle());
+        post.setContent(dto.getContent());
+        post.setImageUrl(dto.getImageUrl());
+
         postRepository.save(post);
-        return new PostResponse(post.getTitle(),post.getContent(),post.getImageUrl(),post.getViews());
+        return "업데이트 완료";
     }
 }

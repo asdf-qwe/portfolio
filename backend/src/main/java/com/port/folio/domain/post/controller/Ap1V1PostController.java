@@ -18,8 +18,8 @@ public class Ap1V1PostController {
     private final PostService postService;
 
     @PostMapping
-    public ResponseEntity<String> createPost(@RequestBody CreatePostDto dto, @RequestParam Long categoryId){
-        Post post = postService.createPost(dto,categoryId);
+    public ResponseEntity<String> createPost(@RequestBody CreatePostDto dto, @RequestParam Long categoryId, @RequestParam Long tabId){
+        Post post = postService.createPost(dto,categoryId, tabId);
         return ResponseEntity.ok("게시글 성공");
     }
 
@@ -30,8 +30,14 @@ public class Ap1V1PostController {
     }
 
     @GetMapping
-    public ResponseEntity<PostResponse> readPost(@RequestParam Long postId) {
-        PostResponse post = postService.getPost(postId);
+    public ResponseEntity<PostResponse> readPost(@RequestParam Long tabId) {
+        PostResponse post = postService.getPost(tabId);
         return ResponseEntity.ok(post);
+    }
+
+    @PutMapping
+    public ResponseEntity<String> updatePost(@RequestBody CreatePostDto dto, @RequestParam Long tabId){
+        String message = postService.updatePost(dto, tabId);
+        return ResponseEntity.ok(message);
     }
 }

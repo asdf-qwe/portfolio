@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import FileUpload from "@/features/upload/components/FileUpload";
+import { getFilesByCategory } from "@/features/upload/service/uploadService";
 
 interface FileResource {
   id: string;
@@ -12,48 +13,74 @@ interface FileResource {
 }
 
 interface ResourceManagerProps {
-  projectId: string;
+  categoryId: number; // ✅ categoryId로 변경하고 number 타입으로 수정
   className?: string;
 }
 
 export default function ResourceManager({
-  projectId,
+  categoryId, // ✅ categoryId로 변경
   className = "",
 }: ResourceManagerProps) {
   const [resources, setResources] = useState<FileResource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const storageKey = `resources_${projectId}`;
+  const storageKey = `resources_${categoryId}`; // ✅ categoryId 사용
 
   useEffect(() => {
     loadResources();
-  }, [projectId]);
+  }, [categoryId]); // ✅ categoryId 의존성으로 변경
 
   const loadResources = async () => {
     try {
+      setIsLoading(true);
+      // ✅ 백엔드 API에서 파일 목록 가져오기
+      const fileUrls = await getFilesByCategory(categoryId);
+
+      // URL 목록을 FileResource 형태로 변환
+      const resourcesFromApi = fileUrls.map((url, index) => {
+        const fileName = url.split("/").pop() || `파일_${index + 1}`;
+        return {
+          id: `api_${index}`,
+          name: fileName,
+          url: url,
+          uploadDate: new Date().toISOString(), // 실제로는 백엔드에서 날짜 정보를 받아와야 함
+          size: 0, // 실제로는 백엔드에서 파일 크기 정보를 받아와야 함
+        };
+      });
+
+      // 기존 localStorage 데이터와 병합 (임시 호환성)
+      const savedResources = localStorage.getItem(storageKey);
+      const localResources = savedResources ? JSON.parse(savedResources) : [];
+
+      setResources([...resourcesFromApi, ...localResources]);
+    } catch (error) {
+      console.error("자료 로딩 실패:", error);
+      // 에러 발생 시 localStorage 데이터만 사용
       const savedResources = localStorage.getItem(storageKey);
       if (savedResources) {
         setResources(JSON.parse(savedResources));
       }
-      setIsLoading(false);
-    } catch (error) {
-      console.error("자료 로딩 실패:", error);
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleUploadSuccess = (url: string, fileName: string) => {
+  const handleUploadSuccess = async (url: string, fileName: string) => {
     const newResource: FileResource = {
-      id: Date.now().toString(),
+      id: `new_${Date.now()}`,
       name: fileName,
       url: url,
       uploadDate: new Date().toISOString(),
       size: 0, // 실제로는 백엔드에서 파일 크기 정보를 받아와야 함
     };
 
-    const updatedResources = [...resources, newResource];
-    setResources(updatedResources);
-    localStorage.setItem(storageKey, JSON.stringify(updatedResources));
+    // 새 파일을 목록에 즉시 추가
+    setResources((prev) => [newResource, ...prev]);
+
+    // 선택적으로 전체 목록을 다시 로드하여 서버와 동기화
+    setTimeout(() => {
+      loadResources();
+    }, 1000);
   };
 
   const handleDelete = (id: string) => {
@@ -87,7 +114,10 @@ export default function ResourceManager({
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           새 자료 업로드
         </h3>
-        <FileUpload onUploadSuccess={handleUploadSuccess} />
+        <FileUpload
+          onUploadSuccess={handleUploadSuccess}
+          categoryId={categoryId}
+        />
       </div>
 
       {/* 자료 목록 섹션 */}

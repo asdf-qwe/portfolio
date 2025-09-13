@@ -11,8 +11,11 @@ export interface PostListDto {
 }
 
 export interface PostResponse {
+  id?: number;
   title: string;
   content: string;
   imageUrl: string;
   view: number;
+  createdAt?: string;
+  updatedAt?: string;
 }

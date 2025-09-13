@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findByCategoryId(long categoryId);
+    Post findByTabId(Long tabId);
 }

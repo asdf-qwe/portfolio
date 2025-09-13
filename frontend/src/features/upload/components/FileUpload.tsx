@@ -9,12 +9,14 @@ import {
 
 interface FileUploadProps {
   onUploadSuccess: (url: string, fileName: string) => void;
+  categoryId: number; // ✅ categoryId 추가
   allowedTypes?: string[];
   maxSizeMB?: number;
 }
 
 export default function FileUpload({
   onUploadSuccess,
+  categoryId, // ✅ categoryId 추가
   allowedTypes = [],
   maxSizeMB = 10,
 }: FileUploadProps) {
@@ -44,7 +46,7 @@ export default function FileUpload({
 
     try {
       setIsUploading(true);
-      const url = await uploadFileToS3(file);
+      const url = await uploadFileToS3(file, categoryId); // ✅ categoryId 전달
       onUploadSuccess(url, file.name);
 
       // 파일 입력 초기화

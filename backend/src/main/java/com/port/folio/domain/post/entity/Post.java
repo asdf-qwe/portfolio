@@ -1,10 +1,9 @@
 package com.port.folio.domain.post.entity;
 
 import com.port.folio.domain.category.entity.Category;
+import com.port.folio.domain.tab.entity.Tab;
 import com.port.folio.global.Jpa.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -23,4 +22,9 @@ public class Post extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Category category;
+
+
+    @OneToOne
+    @JoinColumn(name = "tab_id") // ✅ FK 컬럼
+    private Tab tab;
 }

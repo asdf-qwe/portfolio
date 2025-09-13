@@ -7,6 +7,10 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import Button from "@/features/auth/components/Button";
 import { categoryService } from "@/features/category/service/categoryService";
 import { CategoryResponse } from "@/features/category/types/category";
+import {
+  uploadProfileImage,
+  getUserProfileImage,
+} from "@/features/upload/service/uploadService";
 
 interface HomePageProps {
   params: Promise<{
@@ -22,6 +26,11 @@ export default function HomePage({ params }: HomePageProps) {
   // 카테고리 상태 관리
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // 프로필 이미지 상태 관리
+  const [profileImageUrl, setProfileImageUrl] = useState<string>("/김현우.jpg"); // 기본 이미지
+  const [isUploadingProfile, setIsUploadingProfile] = useState(false);
+  const [profileImageLoading, setProfileImageLoading] = useState(true);
 
   // 카테고리 데이터 가져오기
   useEffect(() => {
@@ -43,11 +52,63 @@ export default function HomePage({ params }: HomePageProps) {
     fetchCategories();
   }, [userId]);
 
+  // 프로필 이미지 가져오기
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      try {
+        setProfileImageLoading(true);
+        const imageUrl = await getUserProfileImage(parseInt(userId));
+        if (imageUrl) {
+          setProfileImageUrl(imageUrl);
+        }
+      } catch (error) {
+        console.error("프로필 이미지 조회 실패:", error);
+        // 에러 시 기본 이미지 유지
+      } finally {
+        setProfileImageLoading(false);
+      }
+    };
+
+    fetchProfileImage();
+  }, [userId]);
+
   const handleLogout = async () => {
     try {
       await logout();
     } catch (error) {
       console.error("로그아웃 실패:", error);
+    }
+  };
+
+  // 프로필 이미지 업로드 처리
+  const handleProfileImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !canEdit) return;
+
+    // 이미지 파일 검증
+    if (!file.type.startsWith("image/")) {
+      alert("이미지 파일만 업로드 가능합니다.");
+      return;
+    }
+
+    // 파일 크기 검증 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("파일 크기는 5MB 이하여야 합니다.");
+      return;
+    }
+
+    try {
+      setIsUploadingProfile(true);
+      const imageUrl = await uploadProfileImage(file, parseInt(userId));
+      setProfileImageUrl(imageUrl);
+      alert("프로필 이미지가 성공적으로 업로드되었습니다!");
+    } catch (error) {
+      console.error("프로필 이미지 업로드 실패:", error);
+      alert("프로필 이미지 업로드에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsUploadingProfile(false);
     }
   };
 
@@ -181,19 +242,69 @@ export default function HomePage({ params }: HomePageProps) {
             </div>
             <div className="flex justify-center items-center">
               <div className="relative w-[240px] h-[320px] rounded-lg overflow-hidden shadow-xl transform hover:scale-105 transition-duration-300">
-                <Image
-                  src="/김현우.jpg"
-                  alt="Profile"
-                  fill
-                  sizes="(max-width: 240px) 100vw"
-                  style={{
-                    objectFit: "cover",
-                    objectPosition: "center top",
-                  }}
-                  className="rounded-lg"
-                  priority
-                />
+                {profileImageLoading ? (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : (
+                  <Image
+                    src={profileImageUrl}
+                    alt="Profile"
+                    fill
+                    sizes="(max-width: 240px) 100vw"
+                    style={{
+                      objectFit: "cover",
+                      objectPosition: "center top",
+                    }}
+                    className="rounded-lg"
+                    priority
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/5"></div>
+
+                {/* 편집 가능한 경우 업로드 버튼 표시 */}
+                {canEdit && (
+                  <div className="absolute bottom-4 right-4">
+                    <label
+                      htmlFor="profile-image-upload"
+                      className="cursor-pointer"
+                    >
+                      <div className="bg-blue-500 text-white p-2 rounded-full shadow-lg hover:bg-blue-600 transition-colors">
+                        {isUploadingProfile ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : (
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                    </label>
+                    <input
+                      id="profile-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfileImageUpload}
+                      className="hidden"
+                      disabled={isUploadingProfile}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
