@@ -3,8 +3,17 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ProjectHeader from "@/components/ProjectHeader";
-import { getPostByTab, updatePost } from "@/features/post/service/postService";
-import { CreatePostDto, PostResponse } from "@/features/post/types/post";
+import {
+  getPostByTab,
+  updatePost,
+  getBasicTabs,
+  updateBasicTabContent,
+} from "@/features/post/service/postService";
+import {
+  CreatePostDto,
+  PostResponse,
+  BasicTabDto,
+} from "@/features/post/types/post";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { categoryService } from "@/features/category/service/categoryService";
 import { CategoryResponse } from "@/features/category/types/category";
@@ -48,6 +57,10 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const [introContent, setIntroContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
+  // 기본 탭 내용 상태
+  const [basicTabs, setBasicTabs] = useState<BasicTabDto[]>([]);
+  const [basicTabsLoading, setBasicTabsLoading] = useState(true);
+
   // 자료 기본 탭 관련 상태
   const [resources, setResources] = useState<FileResource[]>([]);
   const [isResourcesLoading, setIsResourcesLoading] = useState(true);
@@ -84,8 +97,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     }
 
     setIsEditMode(!isEditMode);
-    if (!isEditMode && !introContent) {
-      // 편집 모드로 진입 시 빈 템플릿 설정 (최초 편집 시에만)
+    if (!isEditMode && (!introContent || introContent === "빈 게시글")) {
+      // 편집 모드로 진입 시 빈 템플릿 설정 (최초 편집 시 또는 빈 게시글인 경우)
       setIntroContent(`# ${category?.categoryTitle || `카테고리 ${categoryId}`}
 
 ## 프로젝트 개요
@@ -113,9 +126,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
     try {
       setIsSaving(true);
-      // 여기서는 localStorage에 저장하는 것으로 처리
-      // 실제로는 백엔드 API를 호출해야 함
-      localStorage.setItem(`intro_${categoryId}`, introContent);
+      await updateBasicTabContent(parseInt(categoryId), introContent);
       setIsEditMode(false);
       alert("프로젝트 소개가 저장되었습니다!");
     } catch (error) {
@@ -127,8 +138,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   };
 
   // 자료 관리 함수들
-  const resourceStorageKey = `resources_${categoryId}`;
-
   const loadResources = async () => {
     try {
       setIsResourcesLoading(true);
@@ -147,18 +156,10 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         };
       });
 
-      // 기존 localStorage 데이터와 병합 (임시 호환성)
-      const savedResources = localStorage.getItem(resourceStorageKey);
-      const localResources = savedResources ? JSON.parse(savedResources) : [];
-
-      setResources([...resourcesFromApi, ...localResources]);
+      setResources(resourcesFromApi);
     } catch (error) {
       console.error("자료 로딩 실패:", error);
-      // 에러 발생 시 localStorage 데이터만 사용
-      const savedResources = localStorage.getItem(resourceStorageKey);
-      if (savedResources) {
-        setResources(JSON.parse(savedResources));
-      }
+      setResources([]);
     } finally {
       setIsResourcesLoading(false);
     }
@@ -185,7 +186,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const handleDeleteResource = (id: string) => {
     const updatedResources = resources.filter((resource) => resource.id !== id);
     setResources(updatedResources);
-    localStorage.setItem(resourceStorageKey, JSON.stringify(updatedResources));
+    // TODO: 실제 백엔드 API로 파일 삭제 구현 필요
   };
 
   const formatFileSize = (bytes: number) => {
@@ -422,13 +423,30 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     fetchCategory();
   }, [categoryId, user?.id, isLoggedIn]);
 
-  // 프로젝트 소개 내용 불러오기
+  // 기본 탭 내용 불러오기
   useEffect(() => {
-    if (categoryId) {
-      const savedIntro = localStorage.getItem(`intro_${categoryId}`);
-      if (savedIntro) {
-        setIntroContent(savedIntro);
+    const loadBasicTabs = async () => {
+      try {
+        setBasicTabsLoading(true);
+        const basicTabData = await getBasicTabs(parseInt(categoryId));
+        setBasicTabs([basicTabData]); // 단일 객체를 배열로 래핑
+
+        // 첫 번째 기본 탭 내용을 프로젝트 소개에 사용
+        if (
+          basicTabData.basicContent1 &&
+          basicTabData.basicContent1 !== "빈 게시글"
+        ) {
+          setIntroContent(basicTabData.basicContent1);
+        }
+      } catch (error) {
+        console.error("기본 탭 내용 조회 실패:", error);
+      } finally {
+        setBasicTabsLoading(false);
       }
+    };
+
+    if (categoryId) {
+      loadBasicTabs();
     }
   }, [categoryId]);
 
@@ -606,111 +624,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
               </div>
             </div>
 
-            {/* 대표 동영상 섹션 */}
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  대표 동영상
-                </h2>
-                {canEdit && (
-                  <label htmlFor="main-video-upload" className="cursor-pointer">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                      {isUploadingVideo ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          <span>업로드 중...</span>
-                        </>
-                      ) : (
-                        <>
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m5 0H3a2 2 0 00-2 2v10a2 2 0 002 2h18a2 2 0 002-2V6a2 2 0 00-2-2z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M10 9l5 3-5 3V9z"
-                            />
-                          </svg>
-                          <span>동영상 업로드</span>
-                        </>
-                      )}
-                    </div>
-                  </label>
-                )}
-              </div>
-
-              {isVideoLoading ? (
-                <div className="flex justify-center items-center h-64 bg-gray-100 rounded-lg">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                </div>
-              ) : mainVideoUrl ? (
-                <div className="relative">
-                  <video
-                    controls
-                    className="w-full max-h-96 rounded-lg shadow-lg"
-                    poster={`${mainVideoUrl}#t=1`}
-                  >
-                    <source src={mainVideoUrl} type="video/mp4" />
-                    <source src={mainVideoUrl} type="video/webm" />
-                    <source src={mainVideoUrl} type="video/mov" />
-                    브라우저가 동영상을 지원하지 않습니다.
-                  </video>
-                </div>
-              ) : (
-                <div className="flex justify-center items-center h-64 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg">
-                  <div className="text-center text-gray-500">
-                    <svg
-                      className="mx-auto h-12 w-12 text-gray-400 mb-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m5 0H3a2 2 0 00-2 2v10a2 2 0 002 2h18a2 2 0 002-2V6a2 2 0 00-2-2z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M10 9l5 3-5 3V9z"
-                      />
-                    </svg>
-                    <p>대표 동영상이 없습니다.</p>
-                    {canEdit && (
-                      <p className="text-sm mt-2">
-                        위의 업로드 버튼을 사용하여 동영상을 추가해보세요.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* 숨겨진 파일 입력 */}
-              {canEdit && (
-                <input
-                  id="main-video-upload"
-                  type="file"
-                  accept="video/*"
-                  onChange={handleMainVideoUpload}
-                  className="hidden"
-                  disabled={isUploadingVideo}
-                />
-              )}
-            </div>
-
             {/* 탭 메뉴 */}
             <div className="border-b mb-8">
               <div className="flex justify-between items-center mb-4">
@@ -870,26 +783,80 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                       </div>
 
                       {/* 동영상 플레이어 - 편집 중에도 표시 */}
-                      <div className="md:col-span-3 rounded-xl overflow-hidden shadow-lg bg-gray-50">
-                        {/* 비디오 플레이스홀더 */}
-                        <div className="aspect-[16/9] bg-gray-200 flex items-center justify-center">
-                          <div className="text-center p-8">
-                            <svg
-                              className="w-16 h-16 text-gray-400 mx-auto mb-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                              />
-                            </svg>
-                            <p className="text-gray-500">데모 영상 준비중</p>
+                      <div className="md:col-span-3 rounded-xl overflow-hidden shadow-lg bg-gray-50 relative">
+                        {isVideoLoading ? (
+                          <div className="aspect-[16/9] bg-gray-200 flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                           </div>
-                        </div>
+                        ) : mainVideoUrl ? (
+                          <div className="aspect-[16/9]">
+                            <video
+                              className="w-full h-full object-cover"
+                              controls
+                            >
+                              <source src={mainVideoUrl} type="video/mp4" />
+                              <source src={mainVideoUrl} type="video/webm" />
+                              <source src={mainVideoUrl} type="video/mov" />
+                              브라우저가 비디오 재생을 지원하지 않습니다.
+                            </video>
+                          </div>
+                        ) : (
+                          <div className="aspect-[16/9] bg-gray-200 flex items-center justify-center">
+                            <div className="text-center p-8">
+                              <svg
+                                className="w-16 h-16 text-gray-400 mx-auto mb-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 002 2v8a2 2 0 002 2z"
+                                />
+                              </svg>
+                              <p className="text-gray-500">데모 영상 준비중</p>
+                              {canEdit && (
+                                <p className="text-xs text-gray-400 mt-2">
+                                  아래 업로드 버튼을 클릭하여 동영상을
+                                  추가하세요
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 동영상 업로드 버튼 (편집 모드에서만 표시) */}
+                        {canEdit && (
+                          <div className="absolute top-2 right-2">
+                            <label
+                              htmlFor="main-video-upload"
+                              className="cursor-pointer"
+                            >
+                              <div className="bg-blue-500 text-white p-2 rounded-full shadow-lg hover:bg-blue-600 transition-colors">
+                                {isUploadingVideo ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                ) : (
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                    />
+                                  </svg>
+                                )}
+                              </div>
+                            </label>
+                          </div>
+                        )}
+
                         <div className="p-4">
                           <p className="text-sm text-gray-600">
                             ▶️{" "}
@@ -905,12 +872,24 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                     <div className="grid md:grid-cols-5 gap-8 items-start">
                       {/* 텍스트 콘텐츠 영역 */}
                       <div className="md:col-span-2">
-                        {introContent ? (
+                        {basicTabsLoading ? (
+                          /* 기본 탭 로딩 중 */
+                          <div className="bg-gray-50 p-6 rounded-lg">
+                            <div className="animate-pulse space-y-4">
+                              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                            </div>
+                          </div>
+                        ) : introContent && introContent !== "빈 게시글" ? (
                           /* 저장된 내용이 있으면 표시 */
                           <div className="bg-gray-50 p-6 rounded-lg">
-                            <pre className="whitespace-pre-wrap text-gray-700 font-sans">
-                              {introContent}
-                            </pre>
+                            <div className="prose max-w-none">
+                              <pre className="whitespace-pre-wrap text-gray-700 text-base leading-relaxed">
+                                {introContent}
+                              </pre>
+                            </div>
                           </div>
                         ) : (
                           /* 저장된 내용이 없으면 빈 상태 표시 */
@@ -964,26 +943,74 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                       </div>
 
                       {/* 동영상 플레이어 - 항상 표시 */}
-                      <div className="md:col-span-3 rounded-xl overflow-hidden shadow-lg bg-gray-50">
-                        {/* 비디오 플레이스홀더 */}
-                        <div className="aspect-[16/9] bg-gray-200 flex items-center justify-center">
-                          <div className="text-center p-8">
-                            <svg
-                              className="w-16 h-16 text-gray-400 mx-auto mb-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                              />
-                            </svg>
-                            <p className="text-gray-500">데모 영상 준비중</p>
+                      <div className="md:col-span-3 rounded-xl overflow-hidden shadow-lg bg-gray-50 relative">
+                        {isVideoLoading ? (
+                          <div className="aspect-[16/9] bg-gray-200 flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                           </div>
-                        </div>
+                        ) : mainVideoUrl ? (
+                          <div className="aspect-[16/9]">
+                            <video
+                              className="w-full h-full object-cover"
+                              controls
+                            >
+                              <source src={mainVideoUrl} type="video/mp4" />
+                              <source src={mainVideoUrl} type="video/webm" />
+                              <source src={mainVideoUrl} type="video/mov" />
+                              브라우저가 비디오 재생을 지원하지 않습니다.
+                            </video>
+                          </div>
+                        ) : (
+                          <div className="aspect-[16/9] bg-gray-200 flex items-center justify-center">
+                            <div className="text-center p-8">
+                              <svg
+                                className="w-16 h-16 text-gray-400 mx-auto mb-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                />
+                              </svg>
+                              <p className="text-gray-500">데모 영상 준비중</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 동영상 업로드 버튼 (편집 권한이 있을 때만 표시) */}
+                        {canEdit && (
+                          <div className="absolute top-2 right-2">
+                            <label
+                              htmlFor="main-video-upload"
+                              className="cursor-pointer"
+                            >
+                              <div className="bg-blue-500 text-white p-2 rounded-full shadow-lg hover:bg-blue-600 transition-colors">
+                                {isUploadingVideo ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                ) : (
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                    />
+                                  </svg>
+                                )}
+                              </div>
+                            </label>
+                          </div>
+                        )}
+
                         <div className="p-4">
                           <p className="text-sm text-gray-600">
                             ▶️{" "}
@@ -996,6 +1023,18 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                     </div>
                   )}
                 </div>
+              )}
+
+              {/* 숨겨진 파일 입력 (프로젝트 소개 탭용) */}
+              {canEdit && (
+                <input
+                  id="main-video-upload"
+                  type="file"
+                  accept="video/*"
+                  onChange={handleMainVideoUpload}
+                  className="hidden"
+                  disabled={isUploadingVideo}
+                />
               )}
 
               {/* 자료 */}

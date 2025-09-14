@@ -19,3 +19,15 @@ export interface PostResponse {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface BasicTabDto {
+  basicTab1: string;
+  basicTab2: string;
+  basicContent1: string;
+  basicContent2: string;
+  userId: number;
+}
+
+export interface BasicTabUpdateReq {
+  basicContent1: string;
+}

@@ -1,5 +1,11 @@
 import axios from "axios";
-import { CreatePostDto, PostListDto, PostResponse } from "../types/post";
+import {
+  CreatePostDto,
+  PostListDto,
+  PostResponse,
+  BasicTabDto,
+  BasicTabUpdateReq,
+} from "../types/post";
 
 const API_BASE = "/api/posts";
 
@@ -74,6 +80,40 @@ export async function getPostByTab(
     }
 
     // 예상치 못한 에러는 다시 throw
+    throw error;
+  }
+}
+
+// 기본 탭 조회 (프로젝트 소개, 자료)
+export async function getBasicTabs(categoryId: number): Promise<BasicTabDto> {
+  try {
+    console.log(`기본 탭 조회 시작 - categoryId: ${categoryId}`);
+    const res = await axios.get(`/api/v1/tab/basic`, {
+      params: { categoryId },
+    });
+    console.log(`기본 탭 조회 성공 - categoryId: ${categoryId}`);
+    return res.data;
+  } catch (error) {
+    console.error(`기본 탭 조회 실패 - categoryId: ${categoryId}`, error);
+    throw error;
+  }
+}
+
+// 기본 탭 내용 업데이트 (프로젝트 소개)
+export async function updateBasicTabContent(
+  categoryId: number,
+  basicContent1: string
+): Promise<string> {
+  try {
+    console.log(`기본 탭 업데이트 시작 - categoryId: ${categoryId}`);
+    const req: BasicTabUpdateReq = { basicContent1 };
+    const res = await axios.put(`/api/v1/tab/basic`, req, {
+      params: { categoryId },
+    });
+    console.log(`기본 탭 업데이트 성공 - categoryId: ${categoryId}`);
+    return res.data;
+  } catch (error) {
+    console.error(`기본 탭 업데이트 실패 - categoryId: ${categoryId}`, error);
     throw error;
   }
 }

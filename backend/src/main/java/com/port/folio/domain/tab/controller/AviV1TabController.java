@@ -1,5 +1,7 @@
 package com.port.folio.domain.tab.controller;
 
+import com.port.folio.domain.tab.dto.BasicTabDto;
+import com.port.folio.domain.tab.dto.BasicTabUpdateReq;
 import com.port.folio.domain.tab.dto.CreateTabReq;
 import com.port.folio.domain.tab.dto.TabRes;
 import com.port.folio.domain.tab.entity.Tab;
@@ -27,5 +29,17 @@ public class AviV1TabController {
         List<TabRes> tabRes = tabService.getTabs(categoryId);
 
         return ResponseEntity.ok(tabRes);
+    }
+
+    @GetMapping("/basic")
+    public ResponseEntity<BasicTabDto> basicTab(@RequestParam Long categoryId){
+        BasicTabDto basicTabDto = tabService.getBasicTabs(categoryId);
+        return ResponseEntity.ok(basicTabDto);
+    }
+
+    @PutMapping("/basic")
+    public ResponseEntity<String> updateBasicContent(@RequestBody BasicTabUpdateReq req, @RequestParam Long categoryId){
+        String message = tabService.updateBasicContent(req, categoryId);
+        return ResponseEntity.ok(message);
     }
 }

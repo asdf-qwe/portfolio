@@ -32,6 +32,11 @@ export default function HomePage({ params }: HomePageProps) {
   const [isUploadingProfile, setIsUploadingProfile] = useState(false);
   const [profileImageLoading, setProfileImageLoading] = useState(true);
 
+  // 카테고리 생성 관련 상태
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newCategoryTitle, setNewCategoryTitle] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
   // 카테고리 데이터 가져오기
   useEffect(() => {
     const fetchCategories = async () => {
@@ -109,6 +114,45 @@ export default function HomePage({ params }: HomePageProps) {
       alert("프로필 이미지 업로드에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsUploadingProfile(false);
+    }
+  };
+
+  // 카테고리 생성 함수
+  const handleCreateCategory = async () => {
+    if (!newCategoryTitle.trim()) {
+      alert("카테고리 제목을 입력해주세요.");
+      return;
+    }
+
+    if (!canEdit) {
+      alert("카테고리 생성 권한이 없습니다.");
+      return;
+    }
+
+    try {
+      setIsCreatingCategory(true);
+      await categoryService.createCategory(
+        {
+          categoryTitle: newCategoryTitle.trim(),
+        },
+        parseInt(userId)
+      );
+
+      // 카테고리 목록 새로고침
+      const categoriesData = await categoryService.getCategories(
+        parseInt(userId)
+      );
+      setCategories(categoriesData);
+
+      // 폼 초기화
+      setNewCategoryTitle("");
+      setShowCreateForm(false);
+      alert("프로젝트가 성공적으로 생성되었습니다!");
+    } catch (error) {
+      console.error("카테고리 생성 실패:", error);
+      alert("프로젝트 생성에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsCreatingCategory(false);
     }
   };
 
@@ -468,9 +512,107 @@ export default function HomePage({ params }: HomePageProps) {
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   아직 프로젝트가 없습니다
                 </h3>
-                <p className="text-gray-500">
+                <p className="text-gray-500 mb-6">
                   첫 번째 프로젝트를 만들어보세요!
                 </p>
+
+                {canEdit && (
+                  <div className="max-w-md mx-auto">
+                    {!showCreateForm ? (
+                      <button
+                        onClick={() => setShowCreateForm(true)}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                        프로젝트 추가하기
+                      </button>
+                    ) : (
+                      <div className="bg-white p-6 rounded-lg shadow-md border">
+                        <h4 className="text-lg font-semibold mb-4">
+                          새 프로젝트 만들기
+                        </h4>
+                        <div className="space-y-4">
+                          <input
+                            type="text"
+                            value={newCategoryTitle}
+                            onChange={(e) =>
+                              setNewCategoryTitle(e.target.value)
+                            }
+                            placeholder="프로젝트 제목을 입력하세요"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter") {
+                                handleCreateCategory();
+                              }
+                            }}
+                            disabled={isCreatingCategory}
+                          />
+                          <div className="flex gap-3 justify-center">
+                            <button
+                              onClick={handleCreateCategory}
+                              disabled={
+                                isCreatingCategory || !newCategoryTitle.trim()
+                              }
+                              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {isCreatingCategory ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  생성 중...
+                                </>
+                              ) : (
+                                <>
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M5 13l4 4L19 7"
+                                    />
+                                  </svg>
+                                  생성
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowCreateForm(false);
+                                setNewCategoryTitle("");
+                              }}
+                              disabled={isCreatingCategory}
+                              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 transition-colors"
+                            >
+                              취소
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!canEdit && (
+                  <p className="text-gray-400 text-sm mt-4">
+                    이 사용자는 아직 프로젝트를 추가하지 않았습니다.
+                  </p>
+                )}
               </div>
             )}
           </div>

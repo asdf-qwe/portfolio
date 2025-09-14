@@ -85,7 +85,10 @@ export default function ResourcesPage() {
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               새 자료 업로드
             </h2>
-            <FileUpload onUploadSuccess={handleUploadSuccess} />
+            <FileUpload
+              onUploadSuccess={handleUploadSuccess}
+              categoryId={0} // 전역 자료 관리용 더미 ID
+            />
           </div>
 
           {/* 자료 목록 섹션 */}

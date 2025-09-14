@@ -4,6 +4,8 @@ import com.port.folio.domain.category.dto.CategoryRequest;
 import com.port.folio.domain.category.dto.CategoryResponse;
 import com.port.folio.domain.category.entity.Category;
 import com.port.folio.domain.category.repository.CategoryRepository;
+import com.port.folio.domain.tab.entity.BasicTab;
+import com.port.folio.domain.tab.repository.BasicTabRepository;
 import com.port.folio.domain.user.entity.User;
 import com.port.folio.domain.user.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -17,14 +19,27 @@ import java.util.stream.Collectors;
 public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
-
+    private final BasicTabRepository basicTabRepository;
     public Category createCategory(CategoryRequest req, Long userId){
 
         Category category = Category.builder()
                 .categoryTitle(req.getCategoryTitle())
                 .userId(userId)
                 .build();
-        return categoryRepository.save(category);
+
+        BasicTab basicTab = BasicTab.builder()
+                .basicTab1("프로젝트 소개")
+                .basicTab2("자료")
+                .basicContent1("소개 없음")
+                .basicContent2("자료 없음")
+                .userId(userId)
+                .category(category)
+                .build();
+
+        Category category1 = categoryRepository.save(category);
+        basicTabRepository.save(basicTab);
+
+        return category1;
     }
 
     public List<CategoryResponse> getCategories(Long userId){
