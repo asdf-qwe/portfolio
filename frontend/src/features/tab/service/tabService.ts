@@ -57,7 +57,7 @@ export class TabService {
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include", // 쿠키 포함 (인증이 필요한 경우)
+          credentials: "omit", // 쿠키 사용하지 않음
         }
       );
 

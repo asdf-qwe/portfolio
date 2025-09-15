@@ -92,7 +92,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   // 프로젝트 소개 편집 모드 토글
   const toggleEditMode = () => {
     if (!canEdit) {
-      alert("편집 권한이 없습니다.");
       return;
     }
 
@@ -120,7 +119,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   // 프로젝트 소개 저장
   const handleSave = async () => {
     if (!canEdit) {
-      alert("편집 권한이 없습니다.");
       return;
     }
 
@@ -128,10 +126,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       setIsSaving(true);
       await updateBasicTabContent(parseInt(categoryId), introContent);
       setIsEditMode(false);
-      alert("프로젝트 소개가 저장되었습니다!");
     } catch (error) {
       console.error("저장 실패:", error);
-      alert("저장에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsSaving(false);
     }
@@ -216,26 +212,39 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
     // 동영상 파일 검증
     if (!file.type.startsWith("video/")) {
-      alert("동영상 파일만 업로드 가능합니다.");
+      console.warn("동영상 파일만 업로드 가능합니다.");
       return;
     }
 
     // 파일 크기 검증 (100MB)
     if (file.size > 100 * 1024 * 1024) {
-      alert("파일 크기는 100MB 이하여야 합니다.");
+      console.warn("파일 크기는 100MB 이하여야 합니다.");
       return;
     }
 
     try {
       setIsUploadingVideo(true);
+      console.log(
+        `동영상 업로드 시작: ${file.name} (${(file.size / 1024 / 1024).toFixed(
+          2
+        )}MB)`
+      );
+
       const videoUrl = await uploadMainVideo(file, parseInt(categoryId));
       setMainVideoUrl(videoUrl);
-      alert("대표 동영상이 성공적으로 업로드되었습니다!");
+
+      console.log("대표 동영상 업로드 완료");
     } catch (error) {
       console.error("대표 동영상 업로드 실패:", error);
-      alert("대표 동영상 업로드에 실패했습니다. 다시 시도해주세요.");
+
+      // 구체적인 오류 메시지 로깅
+      if (error instanceof Error) {
+        console.error("오류 상세:", error.message);
+      }
     } finally {
       setIsUploadingVideo(false);
+      // 파일 입력 초기화
+      event.target.value = "";
     }
   };
 
@@ -282,10 +291,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       );
       setNewTabName("");
       await fetchTabs(); // 탭 목록 다시 불러오기
-      alert("탭이 성공적으로 추가되었습니다!");
     } catch (error) {
       console.error("탭 추가 실패:", error);
-      alert("탭 추가에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsAddingTab(false);
     }
@@ -368,10 +375,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       setEditingTab(null);
       setPostTitle("");
       setPostContent("");
-      alert("게시글이 저장되었습니다!");
     } catch (error) {
       console.error("게시글 저장 실패:", error);
-      alert("게시글 저장에 실패했습니다.");
     } finally {
       setIsSavingPost(false);
     }
@@ -390,19 +395,10 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         setLoading(true);
         setError(null); // 에러 상태 초기화
 
-        // 사용자 정보가 로드될 때까지 대기
-        if (!isLoggedIn) {
-          setError("로그인이 필요합니다.");
-          return;
-        }
-
-        if (!user?.id) {
-          // 사용자 정보가 아직 로드되지 않았다면 로딩 상태 유지
-          return;
-        }
-
-        // 사용자의 카테고리 목록에서 찾기
-        const categories = await categoryService.getCategories(user.id);
+        // URL의 userId를 사용하여 카테고리 조회 (인증 불필요)
+        const categories = await categoryService.getCategories(
+          parseInt(userId)
+        );
         const foundCategory = categories.find(
           (cat) => cat.id === parseInt(categoryId)
         );
@@ -421,7 +417,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     };
 
     fetchCategory();
-  }, [categoryId, user?.id, isLoggedIn]);
+  }, [categoryId, userId]);
 
   // 기본 탭 내용 불러오기
   useEffect(() => {
@@ -482,10 +478,10 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   // 탭 데이터 가져오기
   useEffect(() => {
     // 카테고리가 성공적으로 로드된 후에만 탭 데이터 가져오기
-    if (categoryId && category && user?.id) {
+    if (categoryId && category) {
       fetchTabs();
     }
-  }, [categoryId, category, user?.id]);
+  }, [categoryId, category]);
 
   // 탭이 로드되면 첫 번째 탭을 자동으로 선택
   useEffect(() => {
@@ -504,19 +500,15 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     }
   }, [activeTab, tabs]);
 
-  // 사용자 정보나 카테고리 정보가 로딩 중인 경우
-  if (loading || !user?.id) {
+  // 카테고리 정보가 로딩 중인 경우
+  if (loading) {
     return (
       <>
         <ProjectHeader />
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">
-              {!user?.id
-                ? "사용자 정보를 불러오는 중..."
-                : "카테고리 정보를 불러오는 중..."}
-            </p>
+            <p className="mt-4 text-gray-600">카테고리 정보를 불러오는 중...</p>
           </div>
         </div>
       </>
@@ -592,12 +584,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                 <h1 className="text-4xl font-bold">
                   {category?.categoryTitle || `카테고리 ${categoryId}`}
                 </h1>
-                <p className="text-sm text-gray-500 mt-2">
-                  소유자: User {userId}
-                </p>
-                {!canEdit && (
-                  <p className="text-sm text-orange-500">읽기 전용 모드</p>
-                )}
               </div>
               <div className="flex items-center gap-4">
                 {canEdit && (

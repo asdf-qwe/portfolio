@@ -40,13 +40,19 @@ export async function updatePost(
 
 // 카테고리별 게시글 목록 조회
 export async function getPosts(categoryId: number): Promise<PostListDto[]> {
-  const res = await axios.get(`${API_BASE}/list`, { params: { categoryId } });
+  const res = await axios.get(`${API_BASE}/list`, {
+    params: { categoryId },
+    withCredentials: false,
+  });
   return res.data;
 }
 
 // 게시글 상세 조회
 export async function getPost(postId: number): Promise<PostResponse> {
-  const res = await axios.get(`${API_BASE}`, { params: { postId } });
+  const res = await axios.get(`${API_BASE}`, {
+    params: { postId },
+    withCredentials: false,
+  });
   return res.data;
 }
 
@@ -56,7 +62,10 @@ export async function getPostByTab(
 ): Promise<PostResponse | null> {
   try {
     console.log(`탭 게시글 조회 시작 - tabId: ${tabId}`);
-    const res = await axios.get(`${API_BASE}`, { params: { tabId } });
+    const res = await axios.get(`${API_BASE}`, {
+      params: { tabId },
+      withCredentials: false,
+    });
     console.log(`탭 게시글 조회 성공 - tabId: ${tabId}`);
     return res.data;
   } catch (error) {
@@ -90,6 +99,7 @@ export async function getBasicTabs(categoryId: number): Promise<BasicTabDto> {
     console.log(`기본 탭 조회 시작 - categoryId: ${categoryId}`);
     const res = await axios.get(`/api/v1/tab/basic`, {
       params: { categoryId },
+      withCredentials: false,
     });
     console.log(`기본 탭 조회 성공 - categoryId: ${categoryId}`);
     return res.data;

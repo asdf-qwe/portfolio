@@ -10,13 +10,21 @@ export const uploadFileToS3 = async (
     formData.append("file", file);
     formData.append("categoryId", categoryId.toString());
 
+    // AbortController로 타임아웃 설정 (3분)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 180000); // 3분
+
     const response = await fetch("/api/files/upload", {
       method: "POST",
       body: formData,
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error("파일 업로드에 실패했습니다.");
+      const errorText = await response.text().catch(() => "Unknown error");
+      throw new Error(`업로드 실패 (${response.status}): ${errorText}`);
     }
 
     // 백엔드에서 업로드된 파일 URL을 문자열로 반환
@@ -24,6 +32,20 @@ export const uploadFileToS3 = async (
     return fileUrl;
   } catch (error) {
     console.error("파일 업로드 오류:", error);
+
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        throw new Error(
+          "업로드 시간이 초과되었습니다. 파일 크기를 확인해주세요."
+        );
+      }
+      if (error.message.includes("Failed to fetch")) {
+        throw new Error(
+          "네트워크 연결에 문제가 있습니다. 인터넷 연결을 확인해주세요."
+        );
+      }
+    }
+
     throw error;
   }
 };
@@ -61,23 +83,50 @@ export const uploadMainVideo = async (
   categoryId: number
 ): Promise<string> => {
   try {
+    // 파일 크기 체크 (100MB)
+    if (file.size > 100 * 1024 * 1024) {
+      throw new Error("파일 크기는 100MB 이하여야 합니다.");
+    }
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("categoryId", categoryId.toString());
 
+    // AbortController로 타임아웃 설정 (5분)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5분
+
     const response = await fetch("/api/files/upload/main-video", {
       method: "POST",
       body: formData,
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error("대표 동영상 업로드에 실패했습니다.");
+      const errorText = await response.text().catch(() => "Unknown error");
+      throw new Error(`업로드 실패 (${response.status}): ${errorText}`);
     }
 
     const videoUrl = await response.text();
     return videoUrl;
   } catch (error) {
     console.error("대표 동영상 업로드 오류:", error);
+
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        throw new Error(
+          "업로드 시간이 초과되었습니다. 파일 크기를 확인해주세요."
+        );
+      }
+      if (error.message.includes("Failed to fetch")) {
+        throw new Error(
+          "네트워크 연결에 문제가 있습니다. 인터넷 연결을 확인해주세요."
+        );
+      }
+    }
+
     throw error;
   }
 };
@@ -89,6 +138,7 @@ export const getFilesByCategory = async (
   try {
     const response = await fetch(`/api/files/category/${categoryId}`, {
       method: "GET",
+      credentials: "omit",
     });
 
     if (!response.ok) {
@@ -107,6 +157,7 @@ export const getUserProfileImage = async (userId: number): Promise<string> => {
   try {
     const response = await fetch(`/api/files/user/${userId}/profile-image`, {
       method: "GET",
+      credentials: "omit",
     });
 
     if (!response.ok) {
@@ -129,6 +180,7 @@ export const getMainVideoByCategory = async (
       `/api/files/category/${categoryId}/main-video`,
       {
         method: "GET",
+        credentials: "omit",
       }
     );
 

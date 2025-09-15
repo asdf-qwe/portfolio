@@ -20,11 +20,21 @@ export default function ProjectHeader() {
   const [newCategoryTitle, setNewCategoryTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
+  // URL에서 사용자 ID 추출
+  const getUserIdFromPath = (): number | null => {
+    const match = pathname.match(/\/main\/home\/(\d+)/);
+    return match ? parseInt(match[1]) : null;
+  };
+
   // 카테고리 목록 가져오기
   const fetchCategories = async () => {
     try {
-      if (user?.id) {
-        const categoryList = await categoryService.getCategories(user.id);
+      // URL에서 사용자 ID를 추출하거나, 로그인된 사용자 ID 사용
+      const userIdFromPath = getUserIdFromPath();
+      const targetUserId = userIdFromPath || user?.id;
+
+      if (targetUserId) {
+        const categoryList = await categoryService.getCategories(targetUserId);
         setCategories(categoryList);
       } else {
         setCategories([]);
@@ -39,12 +49,15 @@ export default function ProjectHeader() {
   };
 
   useEffect(() => {
-    if (user?.id) {
+    const userIdFromPath = getUserIdFromPath();
+    const targetUserId = userIdFromPath || user?.id;
+
+    if (targetUserId) {
       fetchCategories();
     } else {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [pathname, user?.id]);
 
   // 카테고리 생성 기능
   const handleCreateCategory = async () => {
@@ -91,7 +104,11 @@ export default function ProjectHeader() {
           <div className="flex items-center space-x-8 py-6">
             {/* 홈 아이콘 */}
             <Link
-              href={user ? `/main/home/${user.id}` : "/"}
+              href={(() => {
+                const userIdFromPath = getUserIdFromPath();
+                const targetUserId = userIdFromPath || user?.id;
+                return targetUserId ? `/main/home/${targetUserId}` : "/";
+              })()}
               className="text-blue-400 hover:text-blue-500 transition-colors p-2 rounded-lg hover:bg-blue-50"
               aria-label="홈으로 이동"
             >
@@ -126,9 +143,11 @@ export default function ProjectHeader() {
               ) : (
                 // 실제 카테고리 메뉴
                 categories.map((category) => {
-                  // 사용자별 카테고리 경로 생성
-                  const categoryPath = user
-                    ? `/main/home/${user.id}/category/${category.id}`
+                  // URL에서 사용자 ID 추출하거나 로그인된 사용자 ID 사용
+                  const userIdFromPath = getUserIdFromPath();
+                  const targetUserId = userIdFromPath || user?.id;
+                  const categoryPath = targetUserId
+                    ? `/main/home/${targetUserId}/category/${category.id}`
                     : `/main/category/${category.id}`;
                   return (
                     <li key={category.id} className="relative">
@@ -155,29 +174,31 @@ export default function ProjectHeader() {
                 })
               )}
 
-              {/* 카테고리 추가 버튼 */}
-              <li>
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="flex items-center gap-1 px-3 py-1 text-blue-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                  title="새 카테고리 추가"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+              {/* 카테고리 추가 버튼 - 로그인된 소유자만 표시 */}
+              {user && getUserIdFromPath() === user.id && (
+                <li>
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="flex items-center gap-1 px-3 py-1 text-blue-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="새 카테고리 추가"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    />
-                  </svg>
-                  <span className="text-sm font-medium">추가</span>
-                </button>
-              </li>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
+                    </svg>
+                    <span className="text-sm font-medium">추가</span>
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
         </nav>

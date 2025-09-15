@@ -28,7 +28,7 @@ export default function HomePage({ params }: HomePageProps) {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   // 프로필 이미지 상태 관리
-  const [profileImageUrl, setProfileImageUrl] = useState<string>("/김현우.jpg"); // 기본 이미지
+  const [profileImageUrl, setProfileImageUrl] = useState<string>("/다운로드.jpeg"); // 기본 이미지
   const [isUploadingProfile, setIsUploadingProfile] = useState(false);
   const [profileImageLoading, setProfileImageLoading] = useState(true);
 
@@ -230,9 +230,6 @@ export default function HomePage({ params }: HomePageProps) {
           <h1 className="text-5xl font-bold mb-4">안녕하세요!</h1>
           <p className="text-2xl mb-8">
             열정과 책임감이 있는 백엔드 개발자입니다.
-          </p>
-          <p className="text-lg mb-8 opacity-90">
-            User ID: {userId} {canEdit && "(내 페이지)"}
           </p>
           <button
             onClick={scrollToProjects}

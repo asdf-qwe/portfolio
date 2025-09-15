@@ -8,6 +8,7 @@ import com.port.folio.domain.user.entity.User;
 import com.port.folio.domain.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class S3Service {
 
     private final String bucket;
@@ -97,7 +99,7 @@ public class S3Service {
      * 카테고리별 자료 리스트 조회
      */
     public List<String> getUrlsByCategory(Long categoryId) {
-        List<File> files = fileRepository.findAllByCategoryId(categoryId);
+        List<File> files = fileRepository.findAllByCategoryIdExcludeVideoAndImage(categoryId);
         return generatePresignedUrls(files.stream().map(File::getUrl).toList());
     }
 
