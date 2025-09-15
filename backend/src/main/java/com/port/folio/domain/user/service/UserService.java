@@ -1,5 +1,7 @@
 package com.port.folio.domain.user.service;
 
+import com.port.folio.domain.main.entity.Main;
+import com.port.folio.domain.main.repository.MainRepository;
 import com.port.folio.domain.user.dto.SignupRequestDto;
 import com.port.folio.domain.user.entity.User;
 import com.port.folio.domain.user.entity.UserRole;
@@ -15,6 +17,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MainRepository mainRepository;
 
     /**
      * 회원가입
@@ -38,7 +41,18 @@ public class UserService {
                 .role(UserRole.USER)
                 .build();
 
-        return userRepository.save(user);
+        userRepository.save(user);
+
+        Main main = Main.builder()
+                .greeting("안녕하세요")
+                .smallGreeting("간략한 자기소개 입니다.")
+                .name("이름")
+                .introduce("자기소개 입니다.")
+                .user(user)
+                .build();
+
+        mainRepository.save(main);
+        return user;
     }
 
     public boolean existsByEmail(String email) {

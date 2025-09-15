@@ -11,6 +11,8 @@ import {
   uploadProfileImage,
   getUserProfileImage,
 } from "@/features/upload/service/uploadService";
+import { mainService } from "@/features/main/service/mainService";
+import { MainResponse } from "@/features/main/type/main";
 
 interface HomePageProps {
   params: Promise<{
@@ -28,7 +30,8 @@ export default function HomePage({ params }: HomePageProps) {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   // 프로필 이미지 상태 관리
-  const [profileImageUrl, setProfileImageUrl] = useState<string>("/다운로드.jpeg"); // 기본 이미지
+  const [profileImageUrl, setProfileImageUrl] =
+    useState<string>("/다운로드.jpeg"); // 기본 이미지
   const [isUploadingProfile, setIsUploadingProfile] = useState(false);
   const [profileImageLoading, setProfileImageLoading] = useState(true);
 
@@ -36,6 +39,23 @@ export default function HomePage({ params }: HomePageProps) {
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newCategoryTitle, setNewCategoryTitle] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
+
+  // 메인 데이터 상태 관리
+  const [mainData, setMainData] = useState<MainResponse | null>(null);
+  const [mainDataLoading, setMainDataLoading] = useState(true);
+
+  // 메인 데이터 편집 상태 관리
+  const [isEditingMain, setIsEditingMain] = useState(false);
+  const [editMainData, setEditMainData] = useState({
+    greeting: "",
+    smallGreeting: "",
+    name: "",
+    introduce: "",
+  });
+  const [isSavingMain, setIsSavingMain] = useState(false);
+
+  // 전역 편집 모드 상태
+  const [isGlobalEditMode, setIsGlobalEditMode] = useState(false);
 
   // 카테고리 데이터 가져오기
   useEffect(() => {
@@ -75,6 +95,31 @@ export default function HomePage({ params }: HomePageProps) {
     };
 
     fetchProfileImage();
+  }, [userId]);
+
+  // 메인 데이터 가져오기
+  useEffect(() => {
+    const fetchMainData = async () => {
+      try {
+        setMainDataLoading(true);
+        const data = await mainService.getMain(parseInt(userId));
+        setMainData(data);
+      } catch (error) {
+        console.error("메인 데이터 조회 실패:", error);
+        // 에러 시 기본값 설정
+        setMainData({
+          greeting: "안녕하세요!",
+          smallGreeting: "열정과 책임감이 있는 개발자입니다.",
+          name: "사용자",
+          introduce:
+            "새로운 기술을 배우고 적용할 때 신기해 하고 좋아하며, 사용자 경험을 개선하는 데 열정을 가지고 있습니다.",
+        });
+      } finally {
+        setMainDataLoading(false);
+      }
+    };
+
+    fetchMainData();
   }, [userId]);
 
   const handleLogout = async () => {
@@ -163,16 +208,105 @@ export default function HomePage({ params }: HomePageProps) {
     projectsSection?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // 기술 스택 데이터
-  const skills = {
-    frontend: ["React", "Next.js", "TypeScript", "Tailwind CSS"],
-    backend: ["Spring Boot", "Node.js", "MySQL", "MongoDB"],
-    tools: ["Git", "Docker", "AWS", "Figma"],
+  // 핵심 역량 데이터
+  const coreCompetencies = {
+    "기술적 전문성": {
+      icon: "💻",
+      description: "다양한 기술 스택을 활용한 개발 역량",
+      skills: ["풀스택 개발", "시스템 설계", "성능 최적화", "보안 구현"],
+    },
+    "문제 해결": {
+      icon: "🔍",
+      description: "복잡한 문제를 체계적으로 분석하고 해결",
+      skills: ["논리적 사고", "디버깅", "알고리즘 설계", "효율적 솔루션"],
+    },
+    "협업 & 소통": {
+      icon: "🤝",
+      description: "팀워크와 원활한 커뮤니케이션 능력",
+      skills: ["팀 협업", "코드 리뷰", "문서화", "프레젠테이션"],
+    },
   };
 
   // 접근 권한 체크
   const isOwner = isLoggedIn && user && user.id?.toString() === userId;
   const canEdit = isOwner;
+
+  // 메인 데이터 편집 시작
+  const startEditingMain = () => {
+    if (!canEdit || !mainData) return;
+
+    setEditMainData({
+      greeting: mainData.greeting,
+      smallGreeting: mainData.smallGreeting,
+      name: mainData.name,
+      introduce: mainData.introduce,
+    });
+    setIsEditingMain(true);
+  };
+
+  // 메인 데이터 편집 취소
+  const cancelEditingMain = () => {
+    setIsEditingMain(false);
+    setEditMainData({
+      greeting: "",
+      smallGreeting: "",
+      name: "",
+      introduce: "",
+    });
+  };
+
+  // 메인 데이터 저장
+  const saveMainData = async () => {
+    if (!canEdit) return;
+
+    try {
+      setIsSavingMain(true);
+
+      await mainService.updateMain(editMainData, parseInt(userId));
+
+      // 저장 후 데이터 새로고침
+      const updatedData = await mainService.getMain(parseInt(userId));
+      setMainData(updatedData);
+
+      setIsEditingMain(false);
+      setIsGlobalEditMode(false); // 전역 편집 모드도 종료
+      console.log("메인 정보가 성공적으로 업데이트되었습니다.");
+    } catch (error) {
+      console.error("메인 정보 저장 실패:", error);
+      alert("저장에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsSavingMain(false);
+    }
+  };
+
+  // 전역 편집 모드 토글
+  const toggleGlobalEditMode = () => {
+    if (!canEdit) return;
+
+    if (!isGlobalEditMode) {
+      // 편집 모드 진입
+      setIsGlobalEditMode(true);
+      if (mainData) {
+        setEditMainData({
+          greeting: mainData.greeting,
+          smallGreeting: mainData.smallGreeting,
+          name: mainData.name,
+          introduce: mainData.introduce,
+        });
+        setIsEditingMain(true);
+      }
+    } else {
+      // 편집 모드 종료
+      setIsGlobalEditMode(false);
+      setIsEditingMain(false);
+      setEditMainData({
+        greeting: "",
+        smallGreeting: "",
+        name: "",
+        introduce: "",
+      });
+    }
+  };
 
   return (
     <main className="min-h-screen bg-white">
@@ -196,6 +330,53 @@ export default function HomePage({ params }: HomePageProps) {
                   <span className="text-sm text-blue-500 bg-blue-50 px-2 py-1 rounded">
                     내 페이지
                   </span>
+                )}
+                {canEdit && (
+                  <button
+                    onClick={
+                      isGlobalEditMode ? saveMainData : toggleGlobalEditMode
+                    }
+                    disabled={isSavingMain}
+                    className={`flex items-center gap-2 px-3 py-1 rounded-lg transition-colors ${
+                      isGlobalEditMode
+                        ? "bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      {isGlobalEditMode ? (
+                        isSavingMain ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : (
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M5 13l4 4L19 7"
+                          />
+                        )
+                      ) : (
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      )}
+                    </svg>
+                    <span className="text-sm font-medium">
+                      {isGlobalEditMode
+                        ? isSavingMain
+                          ? "저장 중..."
+                          : "저장하기"
+                        : "편집 모드"}
+                    </span>
+                  </button>
                 )}
                 <Button
                   variant="outline"
@@ -227,16 +408,70 @@ export default function HomePage({ params }: HomePageProps) {
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center bg-gradient-to-r from-blue-400/80 to-blue-500/80 text-white">
         <div className="container mx-auto px-6 text-center">
-          <h1 className="text-5xl font-bold mb-4">안녕하세요!</h1>
-          <p className="text-2xl mb-8">
-            열정과 책임감이 있는 백엔드 개발자입니다.
-          </p>
-          <button
-            onClick={scrollToProjects}
-            className="bg-white text-blue-500 px-8 py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors cursor-pointer"
-          >
-            프로젝트 보기
-          </button>
+          {mainDataLoading ? (
+            // 로딩 중
+            <>
+              <div className="h-12 w-64 bg-white/20 rounded animate-pulse mx-auto mb-4"></div>
+              <div className="h-8 w-96 bg-white/20 rounded animate-pulse mx-auto mb-8"></div>
+            </>
+          ) : isEditingMain ? (
+            // 편집 모드
+            <div className="max-w-2xl mx-auto space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-2">
+                  메인 인사말
+                </label>
+                <input
+                  type="text"
+                  value={editMainData.greeting}
+                  onChange={(e) =>
+                    setEditMainData({
+                      ...editMainData,
+                      greeting: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 text-4xl font-bold text-center focus:ring-2 focus:ring-white/40 focus:border-white/40"
+                  placeholder="인사말을 입력하세요"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-2">
+                  부제목
+                </label>
+                <input
+                  type="text"
+                  value={editMainData.smallGreeting}
+                  onChange={(e) =>
+                    setEditMainData({
+                      ...editMainData,
+                      smallGreeting: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 text-xl text-center focus:ring-2 focus:ring-white/40 focus:border-white/40"
+                  placeholder="부제목을 입력하세요"
+                />
+              </div>
+            </div>
+          ) : (
+            // 실제 데이터
+            <>
+              <h1 className="text-5xl font-bold mb-4">
+                {mainData?.greeting || "안녕하세요!"}
+              </h1>
+              <p className="text-2xl mb-8">
+                {mainData?.smallGreeting ||
+                  "열정과 책임감이 있는 개발자입니다."}
+              </p>
+            </>
+          )}
+          {!isGlobalEditMode && (
+            <button
+              onClick={scrollToProjects}
+              className="bg-white text-blue-500 px-8 py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors cursor-pointer"
+            >
+              프로젝트 보기
+            </button>
+          )}
         </div>
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent"></div>
       </section>
@@ -246,39 +481,70 @@ export default function HomePage({ params }: HomePageProps) {
         <div className="container mx-auto max-w-4xl">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-center">About Me</h2>
-            {canEdit && (
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-                편집
-              </button>
-            )}
           </div>
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6 h-[320px] flex flex-col justify-center p-4">
               <div className="space-y-6">
-                <h3 className="text-2xl font-bold text-gray-800">김현우</h3>
-                <p className="text-gray-600 leading-relaxed text-lg">
-                  새로운 기술을 배우고 적용할 때 신기해 하고 좋아하며, 사용자
-                  경험을 개선하는 데 열정을 가지고 있습니다. 백엔드 개발자로서
-                  데이터 관리와 처리, 서버의 성능 향상에 대하여 솔루션을
-                  제공합니다.
-                </p>
-                <p className="text-gray-600 leading-relaxed text-lg">
-                  열정과 창의성을 바탕으로 사용자 중심의 웹 서비스를 구현하는
-                  것이 목표입니다.
-                </p>
+                {mainDataLoading ? (
+                  // 로딩 중 - 이름이 위에, 소개글이 아래에
+                  <>
+                    <div className="h-8 w-32 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="space-y-3">
+                      <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-6 w-4/5 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </>
+                ) : isEditingMain ? (
+                  // 편집 모드
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        이름
+                      </label>
+                      <input
+                        type="text"
+                        value={editMainData.name}
+                        onChange={(e) =>
+                          setEditMainData({
+                            ...editMainData,
+                            name: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-bold"
+                        placeholder="이름을 입력하세요"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        소개글
+                      </label>
+                      <textarea
+                        value={editMainData.introduce}
+                        onChange={(e) =>
+                          setEditMainData({
+                            ...editMainData,
+                            introduce: e.target.value,
+                          })
+                        }
+                        rows={4}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                        placeholder="자기소개를 입력하세요"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  // 실제 데이터 - 이름(굵은 글씨)이 위에, 소개글(일반 텍스트)이 아래에
+                  <>
+                    <h3 className="text-2xl font-bold text-gray-800">
+                      {mainData?.name || "사용자"}
+                    </h3>
+                    <p className="text-gray-600 leading-relaxed text-lg">
+                      {mainData?.introduce ||
+                        "새로운 기술을 배우고 적용할 때 신기해 하고 좋아하며, 사용자 경험을 개선하는 데 열정을 가지고 있습니다."}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
             <div className="flex justify-center items-center">
@@ -352,44 +618,32 @@ export default function HomePage({ params }: HomePageProps) {
         </div>
       </section>
 
-      {/* Skills Section */}
+      {/* Core Competencies Section */}
       <section className="py-20 px-6 bg-gray-50">
         <div className="container mx-auto max-w-4xl">
           <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl font-bold text-center">기술 스택</h2>
-            {canEdit && (
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-                편집
-              </button>
-            )}
+            <h2 className="text-3xl font-bold text-center">핵심 역량</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
-            {Object.entries(skills).map(([category, items]) => (
+            {Object.entries(coreCompetencies).map(([category, competency]) => (
               <div
                 key={category}
-                className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-blue-500"
               >
-                <h3 className="text-xl font-semibold mb-4 capitalize">
-                  {category}
-                </h3>
+                <div className="flex items-center mb-4">
+                  <span className="text-3xl mr-3">{competency.icon}</span>
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    {category}
+                  </h3>
+                </div>
+                <p className="text-gray-600 mb-4 text-sm leading-relaxed">
+                  {competency.description}
+                </p>
                 <ul className="space-y-2">
-                  {items.map((skill) => (
-                    <li key={skill} className="flex items-center text-gray-600">
-                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                      {skill}
+                  {competency.skills.map((skill, index) => (
+                    <li key={index} className="flex items-center text-gray-700">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 flex-shrink-0"></div>
+                      <span className="text-sm">{skill}</span>
                     </li>
                   ))}
                 </ul>
@@ -404,24 +658,6 @@ export default function HomePage({ params }: HomePageProps) {
         <div className="container mx-auto max-w-6xl">
           <div className="flex justify-between items-center mb-12">
             <h2 className="text-3xl font-bold text-center">주요 프로젝트</h2>
-            {canEdit && (
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-                편집
-              </button>
-            )}
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {categoriesLoading ? (

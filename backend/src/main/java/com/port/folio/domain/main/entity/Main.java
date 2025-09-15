@@ -1,10 +1,27 @@
 package com.port.folio.domain.main.entity;
 
+import com.port.folio.domain.user.entity.User;
 import com.port.folio.global.Jpa.BaseEntity;
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
+@Entity
+@SuperBuilder
+@Getter
+@Setter
+@NoArgsConstructor
 public class Main extends BaseEntity {
 
-    private String Greeting;
+    private String greeting;
+    private String smallGreeting;
     private String introduce;
-    
+    private String name;
+
+    @OneToOne
+    private User user;
+
 }
