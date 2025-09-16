@@ -1,7 +1,10 @@
 package com.port.folio.domain.user.service;
 
+import com.port.folio.domain.main.entity.CategoryName;
 import com.port.folio.domain.main.entity.Main;
+import com.port.folio.domain.main.entity.SkillCategory;
 import com.port.folio.domain.main.repository.MainRepository;
+import com.port.folio.domain.main.repository.SkillCategoryRepository;
 import com.port.folio.domain.user.dto.SignupRequestDto;
 import com.port.folio.domain.user.entity.User;
 import com.port.folio.domain.user.entity.UserRole;
@@ -18,7 +21,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final MainRepository mainRepository;
-
+    private final SkillCategoryRepository skillCategoryRepository;
     /**
      * 회원가입
      */
@@ -52,6 +55,14 @@ public class UserService {
                 .build();
 
         mainRepository.save(main);
+
+        SkillCategory skillCategory = SkillCategory.builder()
+                .name(CategoryName.SKILLS)
+                .user(user)
+                .build();
+
+        skillCategoryRepository.save(skillCategory);
+
         return user;
     }
 

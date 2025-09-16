@@ -147,7 +147,14 @@ export class ApiClient {
     }
 
     const text = await response.text();
-    return text ? JSON.parse(text) : null;
+    if (!text) return null;
+
+    // JSON 파싱 시도, 실패하면 원본 텍스트 반환
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
   }
 
   async delete(url: string, options: RequestInit = {}): Promise<any> {

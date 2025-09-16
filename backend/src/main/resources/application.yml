@@ -4,6 +4,8 @@ spring:
   output:
     ansi:
       enabled: ALWAYS
+  profiles:
+    active: dev
   config:
     import: optional:application-secret.yml
   datasource:

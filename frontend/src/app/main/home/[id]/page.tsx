@@ -5,6 +5,7 @@ import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import Button from "@/features/auth/components/Button";
+import SkillsTabs from "@/components/SkillsTabs";
 import { categoryService } from "@/features/category/service/categoryService";
 import { CategoryResponse } from "@/features/category/types/category";
 import {
@@ -192,7 +193,6 @@ export default function HomePage({ params }: HomePageProps) {
       // 폼 초기화
       setNewCategoryTitle("");
       setShowCreateForm(false);
-      alert("프로젝트가 성공적으로 생성되었습니다!");
     } catch (error) {
       console.error("카테고리 생성 실패:", error);
       alert("프로젝트 생성에 실패했습니다. 다시 시도해주세요.");
@@ -206,25 +206,6 @@ export default function HomePage({ params }: HomePageProps) {
     e.preventDefault();
     const projectsSection = document.getElementById("projects");
     projectsSection?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  // 핵심 역량 데이터
-  const coreCompetencies = {
-    "기술적 전문성": {
-      icon: "💻",
-      description: "다양한 기술 스택을 활용한 개발 역량",
-      skills: ["풀스택 개발", "시스템 설계", "성능 최적화", "보안 구현"],
-    },
-    "문제 해결": {
-      icon: "🔍",
-      description: "복잡한 문제를 체계적으로 분석하고 해결",
-      skills: ["논리적 사고", "디버깅", "알고리즘 설계", "효율적 솔루션"],
-    },
-    "협업 & 소통": {
-      icon: "🤝",
-      description: "팀워크와 원활한 커뮤니케이션 능력",
-      skills: ["팀 협업", "코드 리뷰", "문서화", "프레젠테이션"],
-    },
   };
 
   // 접근 권한 체크
@@ -477,7 +458,7 @@ export default function HomePage({ params }: HomePageProps) {
       </section>
 
       {/* About Section */}
-      <section className="py-20 px-6">
+      <section className="py-18 px-6">
         <div className="container mx-auto max-w-4xl">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-center">About Me</h2>
@@ -618,40 +599,12 @@ export default function HomePage({ params }: HomePageProps) {
         </div>
       </section>
 
-      {/* Core Competencies Section */}
-      <section className="py-20 px-6 bg-gray-50">
-        <div className="container mx-auto max-w-4xl">
-          <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl font-bold text-center">핵심 역량</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {Object.entries(coreCompetencies).map(([category, competency]) => (
-              <div
-                key={category}
-                className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-blue-500"
-              >
-                <div className="flex items-center mb-4">
-                  <span className="text-3xl mr-3">{competency.icon}</span>
-                  <h3 className="text-xl font-semibold text-gray-800">
-                    {category}
-                  </h3>
-                </div>
-                <p className="text-gray-600 mb-4 text-sm leading-relaxed">
-                  {competency.description}
-                </p>
-                <ul className="space-y-2">
-                  {competency.skills.map((skill, index) => (
-                    <li key={index} className="flex items-center text-gray-700">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 flex-shrink-0"></div>
-                      <span className="text-sm">{skill}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Skills Tabs Section */}
+      <SkillsTabs
+        canEdit={!!canEdit}
+        isEditMode={isGlobalEditMode}
+        userId={parseInt(userId)}
+      />
 
       {/* Featured Projects Section */}
       <section id="projects" className="py-20 px-6">
