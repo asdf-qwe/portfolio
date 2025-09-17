@@ -67,7 +67,7 @@ export default function SignupPage() {
         setErrors((prev) => ({ ...prev, email: result.message }));
         setSuccess((prev) => ({ ...prev, email: "" }));
       }
-    } catch (error) {
+    } catch {
       setErrors((prev) => ({
         ...prev,
         email: "이메일 확인 중 오류가 발생했습니다.",
@@ -92,7 +92,7 @@ export default function SignupPage() {
         setErrors((prev) => ({ ...prev, loginId: result.message }));
         setSuccess((prev) => ({ ...prev, loginId: "" }));
       }
-    } catch (error) {
+    } catch {
       setErrors((prev) => ({
         ...prev,
         loginId: "로그인 ID 확인 중 오류가 발생했습니다.",

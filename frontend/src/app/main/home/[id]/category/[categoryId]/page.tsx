@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ProjectHeader from "@/components/ProjectHeader";
 import {
@@ -10,7 +10,6 @@ import {
   updateBasicTabContent,
 } from "@/features/post/service/postService";
 import {
-  CreatePostDto,
   PostResponse,
   BasicTabDto,
 } from "@/features/post/types/post";
@@ -57,8 +56,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const [introContent, setIntroContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // 기본 탭 내용 상태
-  const [basicTabs, setBasicTabs] = useState<BasicTabDto[]>([]);
+  // 기본 탭 내용 상태 (사용하지 않는 변수 제거)
   const [basicTabsLoading, setBasicTabsLoading] = useState(true);
 
   // 자료 기본 탭 관련 상태
@@ -134,7 +132,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   };
 
   // 자료 관리 함수들
-  const loadResources = async () => {
+  const loadResources = useCallback(async () => {
     try {
       setIsResourcesLoading(true);
       // ✅ 백엔드 API에서 파일 목록 가져오기
@@ -159,7 +157,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     } finally {
       setIsResourcesLoading(false);
     }
-  };
+  }, [categoryId]);
 
   const handleUploadSuccess = async (url: string, fileName: string) => {
     const newResource: FileResource = {
@@ -249,7 +247,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   };
 
   // 탭 데이터 가져오기 함수
-  const fetchTabs = async () => {
+  const fetchTabs = useCallback(async () => {
     try {
       setTabsLoading(true);
       console.log(`카테고리 ${categoryId}의 탭 목록을 조회합니다.`);
@@ -275,7 +273,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     } finally {
       setTabsLoading(false);
     }
-  };
+  }, [categoryId]);
 
   // 새 탭 추가 함수
   const handleAddTab = async () => {
@@ -425,7 +423,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       try {
         setBasicTabsLoading(true);
         const basicTabData = await getBasicTabs(parseInt(categoryId));
-        setBasicTabs([basicTabData]); // 단일 객체를 배열로 래핑
 
         // 첫 번째 기본 탭 내용을 프로젝트 소개에 사용
         if (
@@ -451,7 +448,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     if (categoryId) {
       loadResources();
     }
-  }, [categoryId]);
+  }, [categoryId, loadResources]);
 
   // 대표 동영상 불러오기
   useEffect(() => {
@@ -481,7 +478,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     if (categoryId && category) {
       fetchTabs();
     }
-  }, [categoryId, category]);
+  }, [categoryId, category, fetchTabs]);
 
   // 탭이 로드되면 첫 번째 탭을 자동으로 선택
   useEffect(() => {
