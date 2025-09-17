@@ -6,7 +6,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 export class ApiClient {
   private static instance: ApiClient;
   private isRefreshing = false;
-  private refreshPromise: Promise<any> | null = null;
+  private refreshPromise: Promise<void> | null = null;
 
   static getInstance(): ApiClient {
     if (!ApiClient.instance) {
@@ -59,8 +59,9 @@ export class ApiClient {
   }
 
   private async refreshToken(): Promise<void> {
-    if (this.isRefreshing) {
-      return this.refreshPromise;
+    if (this.isRefreshing && this.refreshPromise) {
+      await this.refreshPromise;
+      return;
     }
 
     this.isRefreshing = true;
@@ -77,18 +78,21 @@ export class ApiClient {
         }
         return response.json();
       })
+      .then(() => {
+        // 성공 시 void 반환
+      })
       .finally(() => {
         this.isRefreshing = false;
         this.refreshPromise = null;
       });
 
-    return this.refreshPromise;
+    await this.refreshPromise;
   }
 
   async get(
     url: string,
-    options: { params?: Record<string, any> } & RequestInit = {}
-  ): Promise<any> {
+    options: { params?: Record<string, unknown> } & RequestInit = {}
+  ): Promise<unknown> {
     const { params, ...requestOptions } = options;
 
     // 쿼리 매개변수 처리
@@ -119,7 +123,11 @@ export class ApiClient {
     return text ? JSON.parse(text) : null;
   }
 
-  async post(url: string, data?: any, options: RequestInit = {}): Promise<any> {
+  async post(
+    url: string,
+    data?: unknown,
+    options: RequestInit = {}
+  ): Promise<unknown> {
     const response = await this.request(url, {
       ...options,
       method: "POST",
@@ -135,7 +143,11 @@ export class ApiClient {
     return text ? JSON.parse(text) : null;
   }
 
-  async put(url: string, data?: any, options: RequestInit = {}): Promise<any> {
+  async put(
+    url: string,
+    data?: unknown,
+    options: RequestInit = {}
+  ): Promise<unknown> {
     const response = await this.request(url, {
       ...options,
       method: "PUT",
@@ -157,7 +169,7 @@ export class ApiClient {
     }
   }
 
-  async delete(url: string, options: RequestInit = {}): Promise<any> {
+  async delete(url: string, options: RequestInit = {}): Promise<unknown> {
     const response = await this.request(url, {
       ...options,
       method: "DELETE",
