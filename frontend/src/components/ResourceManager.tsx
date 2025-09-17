@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import FileUpload from "@/features/upload/components/FileUpload";
 import { getFilesByCategory } from "@/features/upload/service/uploadService";
 
@@ -26,11 +26,7 @@ export default function ResourceManager({
 
   const storageKey = `resources_${categoryId}`; // ✅ categoryId 사용
 
-  useEffect(() => {
-    loadResources();
-  }, [categoryId]); // ✅ categoryId 의존성으로 변경
-
-  const loadResources = async () => {
+  const loadResources = useCallback(async () => {
     try {
       setIsLoading(true);
       // ✅ 백엔드 API에서 파일 목록 가져오기
@@ -63,7 +59,11 @@ export default function ResourceManager({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [categoryId, storageKey]);
+
+  useEffect(() => {
+    loadResources();
+  }, [loadResources]);
 
   const handleUploadSuccess = async (url: string, fileName: string) => {
     const newResource: FileResource = {

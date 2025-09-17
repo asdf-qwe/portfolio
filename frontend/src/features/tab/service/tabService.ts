@@ -11,9 +11,9 @@ export class TabService {
    * 새 탭 생성
    * @param tabData 생성할 탭 데이터
    * @param categoryId 카테고리 ID
-   * @returns Promise<any> - 백엔드에서 Tab 엔티티를 반환하므로 any로 설정
+   * @returns Promise<unknown> - 백엔드에서 Tab 엔티티를 반환
    */
-  async createTab(tabData: CreateTabReq, categoryId: number): Promise<any> {
+  async createTab(tabData: CreateTabReq, categoryId: number): Promise<unknown> {
     try {
       const response = await fetch(
         `${API_BASE_URL}/v1/tab?categoryId=${categoryId}`,

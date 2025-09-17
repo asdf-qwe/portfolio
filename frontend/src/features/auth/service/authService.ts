@@ -8,7 +8,6 @@ import { apiClient } from "../../../lib/api";
 
 // API 기본 URL - 환경에 맞게 설정
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-const AUTH_API = `${API_URL}/api/v1/auth`;
 
 /**
  * 자동 토큰 갱신을 포함한 fetch wrapper
@@ -119,7 +118,7 @@ export const authService = {
               errorMessage = "잘못된 요청입니다. 입력 정보를 확인해주세요";
             }
           }
-        } catch (jsonError) {
+        } catch {
           // JSON 파싱 실패 시 status에 따른 기본 메시지
           if (response.status === 500 || response.status === 401) {
             errorMessage = "아이디 또는 비밀번호가 올바르지 않습니다";
@@ -167,7 +166,7 @@ export const authService = {
    * 로그아웃 기능
    */ async logout(): Promise<void> {
     try {
-      const response = await fetch(`${API_URL}/api/v1/users/logout`, {
+      await fetch(`${API_URL}/api/v1/users/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

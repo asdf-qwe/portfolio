@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { categoryService } from "@/features/category/service/categoryService";
 import {
   CategoryResponse,
@@ -21,13 +21,13 @@ export default function ProjectHeader() {
   const [isCreating, setIsCreating] = useState(false);
 
   // URL에서 사용자 ID 추출
-  const getUserIdFromPath = (): number | null => {
+  const getUserIdFromPath = useCallback((): number | null => {
     const match = pathname.match(/\/main\/home\/(\d+)/);
     return match ? parseInt(match[1]) : null;
-  };
+  }, [pathname]);
 
   // 카테고리 목록 가져오기
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       // URL에서 사용자 ID를 추출하거나, 로그인된 사용자 ID 사용
       const userIdFromPath = getUserIdFromPath();
@@ -46,7 +46,7 @@ export default function ProjectHeader() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getUserIdFromPath, user?.id]);
 
   useEffect(() => {
     const userIdFromPath = getUserIdFromPath();
@@ -57,7 +57,7 @@ export default function ProjectHeader() {
     } else {
       setLoading(false);
     }
-  }, [pathname, user?.id]);
+  }, [fetchCategories, getUserIdFromPath, user?.id]);
 
   // 카테고리 생성 기능
   const handleCreateCategory = async () => {
