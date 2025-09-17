@@ -19,7 +19,7 @@ class SkillCategoryService {
   ): Promise<string> {
     try {
       const response = await api.put(`${this.baseUrl}?userId=${userId}`, req);
-      return response;
+      return (response as { data: string }).data || "성공";
     } catch (error) {
       console.error("스킬 카테고리 변경 실패:", error);
       throw error;
@@ -34,7 +34,7 @@ class SkillCategoryService {
   async getSkillCategory(userId: number): Promise<SkillCategoryResponse> {
     try {
       const response = await api.get(`${this.baseUrl}?userId=${userId}`);
-      return response as SkillCategoryResponse;
+      return (response as { data: SkillCategoryResponse }).data;
     } catch (error) {
       console.error("스킬 카테고리 조회 실패:", error);
       throw error;
