@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import {
   getPosts,
   getPost,
@@ -34,29 +35,29 @@ const PostListPage: React.FC = () => {
     imageUrl: "",
   });
 
-  // 게시글 목록 조회
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getPosts(categoryId);
       setPosts(data);
-    } catch (err) {
+    } catch {
       setError("게시글을 불러오지 못했습니다.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [categoryId]);
+
+  // 게시글 목록 조회
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   // 게시글 상세 조회
   const handleViewPost = async (postId: number) => {
     try {
       const post = await getPost(postId);
       setSelectedPost(post);
-    } catch (err) {
+    } catch {
       setError("게시글을 불러오지 못했습니다.");
     }
   };
@@ -76,7 +77,7 @@ const PostListPage: React.FC = () => {
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createPost(newPost, categoryId);
+      await createPost(newPost, categoryId, 1); // 기본 탭 ID 1 사용
       if (returnTo) {
         // 지정된 페이지로 리다이렉션
         router.push(returnTo);
@@ -86,7 +87,7 @@ const PostListPage: React.FC = () => {
         // 목록 새로고침
         fetchPosts();
       }
-    } catch (err) {
+    } catch {
       setError("게시글 생성에 실패했습니다.");
     }
   };
@@ -166,9 +167,11 @@ const PostListPage: React.FC = () => {
             <h3 className="text-lg font-semibold">{selectedPost.title}</h3>
             <p className="text-gray-600">조회수: {selectedPost.view}</p>
             {selectedPost.imageUrl && (
-              <img
+              <Image
                 src={selectedPost.imageUrl}
                 alt="게시글 이미지"
+                width={500}
+                height={300}
                 className="max-w-full h-auto"
               />
             )}

@@ -11,7 +11,6 @@ import {
 } from "@/features/post/service/postService";
 import {
   PostResponse,
-  BasicTabDto,
 } from "@/features/post/types/post";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { categoryService } from "@/features/category/service/categoryService";

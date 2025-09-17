@@ -212,30 +212,6 @@ export default function HomePage({ params }: HomePageProps) {
   const isOwner = isLoggedIn && user && user.id?.toString() === userId;
   const canEdit = isOwner;
 
-  // 메인 데이터 편집 시작
-  const startEditingMain = () => {
-    if (!canEdit || !mainData) return;
-
-    setEditMainData({
-      greeting: mainData.greeting,
-      smallGreeting: mainData.smallGreeting,
-      name: mainData.name,
-      introduce: mainData.introduce,
-    });
-    setIsEditingMain(true);
-  };
-
-  // 메인 데이터 편집 취소
-  const cancelEditingMain = () => {
-    setIsEditingMain(false);
-    setEditMainData({
-      greeting: "",
-      smallGreeting: "",
-      name: "",
-      introduce: "",
-    });
-  };
-
   // 메인 데이터 저장
   const saveMainData = async () => {
     if (!canEdit) return;
