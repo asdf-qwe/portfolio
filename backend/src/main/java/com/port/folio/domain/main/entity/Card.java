@@ -23,7 +23,5 @@ public class Card extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "skill_category_id")
     private SkillCategory skillCategory;
-
-    @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CardItem> items;
+    
 }
