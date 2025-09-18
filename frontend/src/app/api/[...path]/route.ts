@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://api.pofol.site'
-  : 'http://localhost:8080';
+// 환경 변수에서 API URL 가져오기 (런타임에 변경 가능)
+const getApiBaseUrl = () => {
+  // 프로덕션에서는 환경 변수로 오버라이드 가능
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'https://api.pofol.site';
+  }
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // 헬스 체크 함수 추가
 async function checkBackendHealth(): Promise<boolean> {
@@ -15,6 +22,34 @@ async function checkBackendHealth(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// 백엔드 서버 다운 시 사용할 대체 응답
+function createFallbackResponse(path: string, method: string) {
+  return new NextResponse(
+    JSON.stringify({
+      error: 'Service Temporarily Unavailable',
+      message: '백엔드 서버가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.',
+      details: {
+        requestedPath: path,
+        method: method,
+        apiBaseUrl: API_BASE_URL,
+        timestamp: new Date().toISOString(),
+        suggestion: '백엔드 서버 상태를 확인하거나 관리자에게 문의하세요.'
+      }
+    }),
+    {
+      status: 503,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Credentials': 'true',
+        'Retry-After': '60', // 60초 후 재시도 권장
+      },
+    }
+  );
 }
 
 export async function GET(
@@ -121,24 +156,7 @@ async function handleRequest(
       const isHealthy = await checkBackendHealth();
       if (!isHealthy) {
         console.error(`[API Proxy] Backend health check failed: ${API_BASE_URL}`);
-        return new NextResponse(
-          JSON.stringify({ 
-            error: 'Service Unavailable', 
-            message: '백엔드 서버가 응답하지 않습니다',
-            targetUrl,
-            timestamp: new Date().toISOString()
-          }),
-          {
-            status: 503,
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-              'Access-Control-Allow-Credentials': 'true',
-            },
-          }
-        );
+        return createFallbackResponse(path, method);
       }
     }
 

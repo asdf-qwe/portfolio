@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://api.pofol.site'
-  : 'http://localhost:8080';
+// 환경 변수에서 API URL 가져오기
+const getApiBaseUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'https://api.pofol.site';
+  }
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export async function GET() {
   try {
