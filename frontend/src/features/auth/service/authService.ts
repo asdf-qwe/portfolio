@@ -7,7 +7,9 @@ import {
 import { apiClient } from "../../../lib/api";
 
 // API 기본 URL - 환경에 맞게 설정
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL = process.env.NODE_ENV === 'production' 
+  ? '' // 프로덕션에서는 같은 도메인의 /api 라우트 사용
+  : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080");
 
 /**
  * 자동 토큰 갱신을 포함한 fetch wrapper
