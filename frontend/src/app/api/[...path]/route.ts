@@ -4,6 +4,19 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://api.pofol.site'
   : 'http://localhost:8080';
 
+// 헬스 체크 함수 추가
+async function checkBackendHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`, { 
+      method: 'GET',
+      signal: AbortSignal.timeout(5000) // 5초 타임아웃
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> }
@@ -64,7 +77,12 @@ async function handleRequest(
   try {
     const path = params.path.join('/');
     const url = new URL(request.url);
-    const targetUrl = `${API_BASE_URL}/api/${path}${url.search}`;
+    
+    // path가 이미 'api/'로 시작하는지 확인
+    const targetPath = path.startsWith('api/') ? path : `api/${path}`;
+    const targetUrl = `${API_BASE_URL}/${targetPath}${url.search}`;
+
+    console.log(`[API Proxy] ${method} ${request.url} -> ${targetUrl}`);
 
     // 요청 헤더에서 필요한 것들만 전달
     const headers: Record<string, string> = {
@@ -95,11 +113,44 @@ async function handleRequest(
       }
     }
 
+    console.log(`[API Proxy] Request headers:`, headers);
+    if (body) console.log(`[API Proxy] Request body:`, body);
+
+    // 백엔드 연결 상태 확인 (프로덕션에서만)
+    if (process.env.NODE_ENV === 'production') {
+      const isHealthy = await checkBackendHealth();
+      if (!isHealthy) {
+        console.error(`[API Proxy] Backend health check failed: ${API_BASE_URL}`);
+        return new NextResponse(
+          JSON.stringify({ 
+            error: 'Service Unavailable', 
+            message: '백엔드 서버가 응답하지 않습니다',
+            targetUrl,
+            timestamp: new Date().toISOString()
+          }),
+          {
+            status: 503,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+              'Access-Control-Allow-Credentials': 'true',
+            },
+          }
+        );
+      }
+    }
+
     const response = await fetch(targetUrl, {
       method,
       headers,
       body,
+      // 타임아웃 설정 추가
+      signal: AbortSignal.timeout(30000), // 30초 타임아웃
     });
+
+    console.log(`[API Proxy] Response status: ${response.status}`);
 
     // 응답 헤더 처리
     const responseHeaders = new Headers();
@@ -126,6 +177,7 @@ async function handleRequest(
     let responseBody: string | null = null;
     try {
       responseBody = await response.text();
+      console.log(`[API Proxy] Response body:`, responseBody);
     } catch (error) {
       console.error('Error reading response body:', error);
     }
@@ -137,14 +189,37 @@ async function handleRequest(
     });
 
   } catch (error) {
-    console.error('API Proxy Error:', error);
+    console.error('[API Proxy] Error:', error);
+    
+    // 네트워크 오류 또는 타임아웃의 경우 더 구체적인 메시지
+    let errorMessage = 'Internal Server Error';
+    let errorDetails = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request Timeout';
+        errorDetails = 'API 요청이 시간 초과되었습니다';
+      } else if (error.message.includes('ECONNREFUSED')) {
+        errorMessage = 'Connection Refused';
+        errorDetails = '백엔드 서버에 연결할 수 없습니다';
+      } else if (error.message.includes('ENOTFOUND')) {
+        errorMessage = 'DNS Resolution Failed';
+        errorDetails = 'API 서버 주소를 찾을 수 없습니다';
+      }
+    }
+    
+    const targetPath = params.path.join('/');
+    const finalTargetPath = targetPath.startsWith('api/') ? targetPath : `api/${targetPath}`;
+    
     return new NextResponse(
       JSON.stringify({ 
-        error: 'Internal Server Error', 
-        message: error instanceof Error ? error.message : 'Unknown error' 
+        error: errorMessage, 
+        message: errorDetails,
+        targetUrl: `${API_BASE_URL}/${finalTargetPath}`,
+        timestamp: new Date().toISOString()
       }),
       {
-        status: 500,
+        status: 502,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
