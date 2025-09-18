@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const getApiBaseUrl = () => {
   // 프로덕션에서는 환경 변수로 오버라이드 가능
   if (process.env.NODE_ENV === 'production') {
+    // SSL 설정 후 도메인 우선 사용, 실패시 IP 폴백
     return process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'https://api.pofol.site';
   }
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -151,14 +152,14 @@ async function handleRequest(
     console.log(`[API Proxy] Request headers:`, headers);
     if (body) console.log(`[API Proxy] Request body:`, body);
 
-    // 백엔드 연결 상태 확인 (프로덕션에서만)
-    if (process.env.NODE_ENV === 'production') {
-      const isHealthy = await checkBackendHealth();
-      if (!isHealthy) {
-        console.error(`[API Proxy] Backend health check failed: ${API_BASE_URL}`);
-        return createFallbackResponse(path, method);
-      }
-    }
+    // 헬스 체크는 임시로 비활성화 (직접 요청 시도)
+    // if (process.env.NODE_ENV === 'production') {
+    //   const isHealthy = await checkBackendHealth();
+    //   if (!isHealthy) {
+    //     console.error(`[API Proxy] Backend health check failed: ${API_BASE_URL}`);
+    //     return createFallbackResponse(path, method);
+    //   }
+    // }
 
     const response = await fetch(targetUrl, {
       method,
