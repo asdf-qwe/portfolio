@@ -18,6 +18,7 @@ async function fetchWithTokenRefresh(
 ): Promise<Response> {
   const response = await fetch(url, {
     ...options,
+    mode: "cors",
     credentials: "include",
   });
 
@@ -30,6 +31,7 @@ async function fetchWithTokenRefresh(
       // 갱신 성공 시 원래 요청 재시도
       return await fetch(url, {
         ...options,
+        mode: "cors",
         credentials: "include",
       });
     } catch (refreshError) {
@@ -62,8 +64,11 @@ export const authService = {
     try {
       const response = await fetch(`${API_URL}/api/v1/users/signup`, {
         method: "POST",
+        mode: "cors",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
         },
         body: JSON.stringify(dto),
       });
@@ -88,8 +93,10 @@ export const authService = {
     try {
       const response = await fetch(`${API_URL}/api/v1/users/login`, {
         method: "POST",
+        mode: "cors",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
         },
         credentials: "include", // 쿠키를 포함하여 요청
         body: JSON.stringify(requestDto),
@@ -168,8 +175,10 @@ export const authService = {
     try {
       await fetch(`${API_URL}/api/v1/users/logout`, {
         method: "POST",
+        mode: "cors",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
         },
         credentials: "include", // 쿠키를 포함하여 요청
       });
@@ -189,8 +198,10 @@ export const authService = {
     try {
       const response = await fetch(`${API_URL}/api/v1/users/refresh`, {
         method: "POST",
+        mode: "cors",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
         },
         credentials: "include", // 쿠키를 포함하여 요청
       });
@@ -223,8 +234,10 @@ export const authService = {
         `${API_URL}/api/v1/users/me`,
         {
           method: "GET",
+          mode: "cors",
           headers: {
             "Content-Type": "application/json",
+            "Accept": "application/json",
           },
         }
       );
@@ -257,8 +270,10 @@ export const authService = {
         )}`,
         {
           method: "GET",
+          mode: "cors",
           headers: {
             "Content-Type": "application/json",
+            "Accept": "application/json",
           },
         }
       );
@@ -295,8 +310,10 @@ export const authService = {
         )}`,
         {
           method: "GET",
+          mode: "cors",
           headers: {
             "Content-Type": "application/json",
+            "Accept": "application/json",
           },
         }
       );

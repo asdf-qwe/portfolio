@@ -21,8 +21,10 @@ export class ApiClient {
     let response = await fetch(fullUrl, {
       ...options,
       credentials: "include",
+      mode: "cors", // CORS 모드 명시적 설정
       headers: {
         "Content-Type": "application/json",
+        "Accept": "application/json",
         ...options.headers,
       },
     });
@@ -40,8 +42,10 @@ export class ApiClient {
         response = await fetch(fullUrl, {
           ...options,
           credentials: "include",
+          mode: "cors",
           headers: {
             "Content-Type": "application/json",
+            "Accept": "application/json",
             ...options.headers,
           },
         });
