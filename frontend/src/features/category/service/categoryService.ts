@@ -1,8 +1,6 @@
 import { CategoryRequest, CategoryResponse } from "../types/category";
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '/api' // 프로덕션에서는 프록시 라우트 사용
-  : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api");
+const API_BASE_URL = "/api";
 
 /**
  * 카테고리 관련 API 서비스

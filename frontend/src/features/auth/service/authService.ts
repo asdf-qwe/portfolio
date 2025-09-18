@@ -6,10 +6,8 @@ import {
 } from "../types/auth";
 import { apiClient } from "../../../lib/api";
 
-// API 기본 URL - 환경에 맞게 설정
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? '' // 프로덕션에서는 같은 도메인의 /api 라우트 사용
-  : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080");
+// API 기본 URL
+const API_URL = "/api";
 
 /**
  * 자동 토큰 갱신을 포함한 fetch wrapper
@@ -70,7 +68,7 @@ export const authService = {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
+          Accept: "application/json",
         },
         body: JSON.stringify(dto),
       });
@@ -98,7 +96,7 @@ export const authService = {
         mode: "cors",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
+          Accept: "application/json",
         },
         credentials: "include", // 쿠키를 포함하여 요청
         body: JSON.stringify(requestDto),
@@ -180,7 +178,7 @@ export const authService = {
         mode: "cors",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
+          Accept: "application/json",
         },
         credentials: "include", // 쿠키를 포함하여 요청
       });
@@ -203,7 +201,7 @@ export const authService = {
         mode: "cors",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
+          Accept: "application/json",
         },
         credentials: "include", // 쿠키를 포함하여 요청
       });
@@ -239,7 +237,7 @@ export const authService = {
           mode: "cors",
           headers: {
             "Content-Type": "application/json",
-            "Accept": "application/json",
+            Accept: "application/json",
           },
         }
       );
@@ -275,7 +273,7 @@ export const authService = {
           mode: "cors",
           headers: {
             "Content-Type": "application/json",
-            "Accept": "application/json",
+            Accept: "application/json",
           },
         }
       );
@@ -315,7 +313,7 @@ export const authService = {
           mode: "cors",
           headers: {
             "Content-Type": "application/json",
-            "Accept": "application/json",
+            Accept: "application/json",
           },
         }
       );

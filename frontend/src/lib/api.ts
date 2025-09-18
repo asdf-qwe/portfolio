@@ -1,6 +1,4 @@
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? '' // 프로덕션에서는 같은 도메인의 /api 라우트 사용
-  : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080");
+const API_URL = "/api";
 
 /**
  * 전역 API 클라이언트 (자동 토큰 갱신 포함)
@@ -26,7 +24,7 @@ export class ApiClient {
       mode: "cors", // CORS 모드 명시적 설정
       headers: {
         "Content-Type": "application/json",
-        "Accept": "application/json",
+        Accept: "application/json",
         ...options.headers,
       },
     });
@@ -47,7 +45,7 @@ export class ApiClient {
           mode: "cors",
           headers: {
             "Content-Type": "application/json",
-            "Accept": "application/json",
+            Accept: "application/json",
             ...options.headers,
           },
         });
