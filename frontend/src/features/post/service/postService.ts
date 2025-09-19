@@ -1,4 +1,3 @@
-import axios from "axios";
 import {
   CreatePostDto,
   PostListDto,
@@ -6,8 +5,9 @@ import {
   BasicTabDto,
   BasicTabUpdateReq,
 } from "../types/post";
+import { CreateIntroduce, IntroduceResponse } from "../../main/type/introduce";
 
-const API_BASE = "/api/posts";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 // 게시글 생성
 export async function createPost(
@@ -15,11 +15,25 @@ export async function createPost(
   categoryId: number,
   tabId: number
 ): Promise<string> {
-  const res = await axios.post(
-    `${API_BASE}?categoryId=${categoryId}&tabId=${tabId}`,
-    dto
+  const response = await fetch(
+    `${API_BASE_URL}/api/posts?categoryId=${categoryId}&tabId=${tabId}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(dto),
+    }
   );
-  return res.data;
+
+  if (!response.ok) {
+    throw new Error(
+      `게시글 생성 실패: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return await response.text();
 }
 
 // 게시글 수정
@@ -29,9 +43,23 @@ export async function updatePost(
 ): Promise<string> {
   try {
     console.log(`게시글 수정 시작 - tabId: ${tabId}`);
-    const res = await axios.put(`${API_BASE}?tabId=${tabId}`, dto);
+    const response = await fetch(`${API_BASE_URL}/api/posts?tabId=${tabId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(dto),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `게시글 수정 실패: ${response.status} ${response.statusText}`
+      );
+    }
+
     console.log(`게시글 수정 성공 - tabId: ${tabId}`);
-    return res.data;
+    return await response.text();
   } catch (error) {
     console.error(`게시글 수정 실패 - tabId: ${tabId}`, error);
     throw error;
@@ -40,20 +68,43 @@ export async function updatePost(
 
 // 카테고리별 게시글 목록 조회
 export async function getPosts(categoryId: number): Promise<PostListDto[]> {
-  const res = await axios.get(`${API_BASE}/list`, {
-    params: { categoryId },
-    withCredentials: false,
-  });
-  return res.data;
+  const response = await fetch(
+    `${API_BASE_URL}/api/posts/list?categoryId=${categoryId}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "omit",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `게시글 목록 조회 실패: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return await response.json();
 }
 
 // 게시글 상세 조회
 export async function getPost(postId: number): Promise<PostResponse> {
-  const res = await axios.get(`${API_BASE}`, {
-    params: { postId },
-    withCredentials: false,
+  const response = await fetch(`${API_BASE_URL}/api/posts?postId=${postId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "omit",
   });
-  return res.data;
+
+  if (!response.ok) {
+    throw new Error(
+      `게시글 조회 실패: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return await response.json();
 }
 
 // 탭별 게시글 조회
@@ -62,30 +113,44 @@ export async function getPostByTab(
 ): Promise<PostResponse | null> {
   try {
     console.log(`탭 게시글 조회 시작 - tabId: ${tabId}`);
-    const res = await axios.get(`${API_BASE}`, {
-      params: { tabId },
-      withCredentials: false,
+    const response = await fetch(`${API_BASE_URL}/api/posts?tabId=${tabId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "omit",
     });
+
     console.log(`탭 게시글 조회 성공 - tabId: ${tabId}`);
-    return res.data;
+
+    if (response.status === 404) {
+      console.log(`탭 ${tabId}에 게시글이 없습니다.`);
+      return null;
+    }
+
+    if (response.status === 500) {
+      console.warn(
+        `서버 에러로 인해 탭 ${tabId}의 게시글을 불러올 수 없습니다.`
+      );
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        `탭 게시글 조회 실패: ${response.status} ${response.statusText}`
+      );
+    }
+
+    return await response.json();
   } catch (error) {
     console.error(`탭 게시글 조회 실패 - tabId: ${tabId}`, error);
 
-    // axios 에러인 경우
-    if (axios.isAxiosError(error)) {
-      // 404 에러 (게시글이 없음)는 정상적인 상황으로 처리
-      if (error.response?.status === 404) {
-        console.log(`탭 ${tabId}에 게시글이 없습니다.`);
-        return null;
-      }
-
-      // 500 에러나 기타 서버 에러
-      if (error.response?.status === 500) {
-        console.warn(
-          `서버 에러로 인해 탭 ${tabId}의 게시글을 불러올 수 없습니다.`
-        );
-        return null;
-      }
+    // 네트워크 에러인 경우
+    if (error instanceof TypeError) {
+      console.warn(
+        `네트워크 에러로 인해 탭 ${tabId}의 게시글을 불러올 수 없습니다.`
+      );
+      return null;
     }
 
     // 예상치 못한 에러는 다시 throw
@@ -97,12 +162,25 @@ export async function getPostByTab(
 export async function getBasicTabs(categoryId: number): Promise<BasicTabDto> {
   try {
     console.log(`기본 탭 조회 시작 - categoryId: ${categoryId}`);
-    const res = await axios.get(`/api/v1/tab/basic`, {
-      params: { categoryId },
-      withCredentials: false,
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/tab/basic?categoryId=${categoryId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "omit",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `기본 탭 조회 실패: ${response.status} ${response.statusText}`
+      );
+    }
+
     console.log(`기본 탭 조회 성공 - categoryId: ${categoryId}`);
-    return res.data;
+    return await response.json();
   } catch (error) {
     console.error(`기본 탭 조회 실패 - categoryId: ${categoryId}`, error);
     throw error;
@@ -117,13 +195,109 @@ export async function updateBasicTabContent(
   try {
     console.log(`기본 탭 업데이트 시작 - categoryId: ${categoryId}`);
     const req: BasicTabUpdateReq = { basicContent1 };
-    const res = await axios.put(`/api/v1/tab/basic`, req, {
-      params: { categoryId },
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/tab/basic?categoryId=${categoryId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(req),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `기본 탭 업데이트 실패: ${response.status} ${response.statusText}`
+      );
+    }
+
     console.log(`기본 탭 업데이트 성공 - categoryId: ${categoryId}`);
-    return res.data;
+    return await response.text();
   } catch (error) {
     console.error(`기본 탭 업데이트 실패 - categoryId: ${categoryId}`, error);
     throw error;
   }
+}
+
+// 프로젝트 소개 생성
+export async function createIntroduce(
+  req: CreateIntroduce,
+  categoryId: number
+): Promise<string> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/posts/introduce?categoryId=${categoryId}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(req),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `프로젝트 소개 생성 실패: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return await response.text();
+}
+
+// 프로젝트 소개 조회
+export async function getIntroduce(
+  categoryId: number
+): Promise<IntroduceResponse> {
+  const url = `${API_BASE_URL}/api/posts/introduce?categoryId=${categoryId}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "omit",
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `프로젝트 소개 조회 실패: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`getIntroduce API 오류:`, error);
+    throw error;
+  }
+}
+
+// 프로젝트 소개 수정
+export async function updateIntroduce(
+  req: CreateIntroduce,
+  categoryId: number
+): Promise<string> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/posts/introduce?categoryId=${categoryId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(req),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `프로젝트 소개 수정 실패: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return await response.text();
 }

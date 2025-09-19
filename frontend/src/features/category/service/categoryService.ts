@@ -1,6 +1,6 @@
 import { CategoryRequest, CategoryResponse } from "../types/category";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 /**
  * 카테고리 관련 API 서비스
@@ -18,7 +18,7 @@ export class CategoryService {
   ): Promise<CategoryResponse> {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/category?userId=${userId}`,
+        `${API_BASE_URL}/api/category?userId=${userId}`,
         {
           method: "POST",
           headers: {
@@ -51,7 +51,7 @@ export class CategoryService {
   async getCategories(userId: number): Promise<CategoryResponse[]> {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/category?userId=${userId}`,
+        `${API_BASE_URL}/api/category?userId=${userId}`,
         {
           method: "GET",
           headers: {
@@ -82,13 +82,16 @@ export class CategoryService {
    */
   async getCategoryById(categoryId: number): Promise<CategoryResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/category/${categoryId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "omit",
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/category/${categoryId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "omit",
+        }
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -115,14 +118,17 @@ export class CategoryService {
     categoryData: CategoryRequest
   ): Promise<CategoryResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/category/${categoryId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(categoryData),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/category/${categoryId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(categoryData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -146,7 +152,7 @@ export class CategoryService {
   async deleteCategory(categoryId: number): Promise<string> {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/category?categoryId=${categoryId}`,
+        `${API_BASE_URL}/api/category?categoryId=${categoryId}`,
         {
           method: "DELETE",
           headers: {

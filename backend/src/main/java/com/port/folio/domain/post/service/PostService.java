@@ -2,10 +2,10 @@ package com.port.folio.domain.post.service;
 
 import com.port.folio.domain.category.entity.Category;
 import com.port.folio.domain.category.repository.CategoryRepository;
-import com.port.folio.domain.post.dto.CreatePostDto;
-import com.port.folio.domain.post.dto.PostListDto;
-import com.port.folio.domain.post.dto.PostResponse;
+import com.port.folio.domain.post.dto.*;
+import com.port.folio.domain.post.entity.Introduce;
 import com.port.folio.domain.post.entity.Post;
+import com.port.folio.domain.post.repository.IntroduceRepository;
 import com.port.folio.domain.post.repository.PostRepository;
 import com.port.folio.domain.tab.dto.TabRes;
 import com.port.folio.domain.tab.entity.Tab;
@@ -24,6 +24,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final TabRepository tabRepository;
+    private final IntroduceRepository introduceRepository;
 
     public Post createPost(CreatePostDto dto, Long categoryId, Long tabId) {
         Category category = categoryRepository.findById(categoryId)
@@ -75,5 +76,33 @@ public class PostService {
 
         postRepository.save(post);
         return "업데이트 완료";
+    }
+
+    public void createIntroduce(CreateIntroduce req, Long categoryId){
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(()-> new IllegalArgumentException("카테고리가 없습니다."));
+
+        Introduce introduce = Introduce.builder()
+                .title(req.getTitle())
+                .content(req.getContent())
+                .category(category)
+                .build();
+
+        introduceRepository.save(introduce);
+    }
+
+    public IntroduceResponse getIntro(Long categoryId){
+        Introduce introduce = introduceRepository.findByCategoryId(categoryId);
+
+        return new IntroduceResponse(introduce.getTitle(),introduce.getContent());
+    }
+
+    public void updateIntro(CreateIntroduce req, Long categoryId){
+        Introduce introduce = introduceRepository.findByCategoryId(categoryId);
+
+        introduce.setTitle(req.getTitle());
+        introduce.setContent(req.getContent());
+
+        introduceRepository.save(introduce);
     }
 }

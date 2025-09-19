@@ -1,5 +1,7 @@
 // 파일 업로드 서비스
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
 // ✅ 일반 자료 업로드 (categoryId 필요)
 export const uploadFileToS3 = async (
   file: File,
@@ -14,7 +16,7 @@ export const uploadFileToS3 = async (
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 180000); // 3분
 
-    const response = await fetch("/api/files/upload", {
+    const response = await fetch(`${API_BASE_URL}/api/files/upload`, {
       method: "POST",
       body: formData,
       signal: controller.signal,
@@ -60,10 +62,13 @@ export const uploadProfileImage = async (
     formData.append("file", file);
     formData.append("userId", userId.toString());
 
-    const response = await fetch("/api/files/upload/profile-image", {
-      method: "POST",
-      body: formData,
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/files/upload/profile-image`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
 
     if (!response.ok) {
       throw new Error("프로필 이미지 업로드에 실패했습니다.");
@@ -96,11 +101,14 @@ export const uploadMainVideo = async (
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 300000); // 5분
 
-    const response = await fetch("/api/files/upload/main-video", {
-      method: "POST",
-      body: formData,
-      signal: controller.signal,
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/files/upload/main-video`,
+      {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      }
+    );
 
     clearTimeout(timeoutId);
 
@@ -136,10 +144,13 @@ export const getFilesByCategory = async (
   categoryId: number
 ): Promise<string[]> => {
   try {
-    const response = await fetch(`/api/files/category/${categoryId}`, {
-      method: "GET",
-      credentials: "omit",
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/files/category/${categoryId}`,
+      {
+        method: "GET",
+        credentials: "omit",
+      }
+    );
 
     if (!response.ok) {
       throw new Error("파일 목록 조회에 실패했습니다.");
@@ -155,10 +166,13 @@ export const getFilesByCategory = async (
 // ✅ 유저 프로필 이미지 조회
 export const getUserProfileImage = async (userId: number): Promise<string> => {
   try {
-    const response = await fetch(`/api/files/user/${userId}/profile-image`, {
-      method: "GET",
-      credentials: "omit",
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/files/user/${userId}/profile-image`,
+      {
+        method: "GET",
+        credentials: "omit",
+      }
+    );
 
     if (!response.ok) {
       throw new Error("프로필 이미지 조회에 실패했습니다.");
@@ -177,7 +191,7 @@ export const getMainVideoByCategory = async (
 ): Promise<string> => {
   try {
     const response = await fetch(
-      `/api/files/category/${categoryId}/main-video`,
+      `${API_BASE_URL}/api/files/category/${categoryId}/main-video`,
       {
         method: "GET",
         credentials: "omit",

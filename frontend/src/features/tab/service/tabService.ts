@@ -1,6 +1,6 @@
 import { CreateTabReq, TabRes } from "../types/tab";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 /**
  * 탭 관련 API 서비스
@@ -15,7 +15,7 @@ export class TabService {
   async createTab(tabData: CreateTabReq, categoryId: number): Promise<unknown> {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/v1/tab?categoryId=${categoryId}`,
+        `${API_BASE_URL}/api/v1/tab?categoryId=${categoryId}`,
         {
           method: "POST",
           headers: {
@@ -50,7 +50,7 @@ export class TabService {
       console.log(`탭 목록 조회 시작 - categoryId: ${categoryId}`);
 
       const response = await fetch(
-        `${API_BASE_URL}/v1/tab/list?categoryId=${categoryId}`,
+        `${API_BASE_URL}/api/v1/tab/list?categoryId=${categoryId}`,
         {
           method: "GET",
           headers: {

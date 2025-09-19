@@ -4,18 +4,18 @@ import {
   SignupRequestDto,
   UserResponseDto,
 } from "../types/auth";
-import { apiClient } from "../../../lib/api";
 
 // API 기본 URL
-const API_URL = "/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 /**
  * 자동 토큰 갱신을 포함한 fetch wrapper
  */
 async function fetchWithTokenRefresh(
-  url: string,
+  endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> {
+  const url = `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, {
     ...options,
     mode: "cors",
@@ -62,7 +62,7 @@ export const authService = {
    */
   async signup(dto: SignupRequestDto): Promise<UserResponseDto> {
     try {
-      const response = await fetch(`${API_URL}/api/v1/users/signup`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/users/signup`, {
         method: "POST",
         mode: "cors",
         credentials: "include",
@@ -91,7 +91,7 @@ export const authService = {
    * @returns JWT 토큰 (액세스 토큰, 리프레시 토큰)
    */ async login(requestDto: LoginRequestDto): Promise<TokenResponseDto> {
     try {
-      const response = await fetch(`${API_URL}/api/v1/users/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/users/login`, {
         method: "POST",
         mode: "cors",
         headers: {
@@ -155,7 +155,13 @@ export const authService = {
    */
   async getCurrentUser(): Promise<UserResponseDto> {
     try {
-      const response = await apiClient.request("/api/v1/users/me");
+      const response = await fetchWithTokenRefresh("/api/v1/users/me", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -173,7 +179,7 @@ export const authService = {
    * 로그아웃 기능
    */ async logout(): Promise<void> {
     try {
-      await fetch(`${API_URL}/api/v1/users/logout`, {
+      await fetch(`${API_BASE_URL}/api/v1/users/logout`, {
         method: "POST",
         mode: "cors",
         headers: {
@@ -196,7 +202,7 @@ export const authService = {
    */
   async refreshToken(): Promise<TokenResponseDto> {
     try {
-      const response = await fetch(`${API_URL}/api/v1/users/refresh`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/users/refresh`, {
         method: "POST",
         mode: "cors",
         headers: {
@@ -230,17 +236,14 @@ export const authService = {
    */
   async isLoggedIn(): Promise<boolean> {
     try {
-      const response = await fetchWithTokenRefresh(
-        `${API_URL}/api/v1/users/me`,
-        {
-          method: "GET",
-          mode: "cors",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        }
-      );
+      const response = await fetchWithTokenRefresh("/api/v1/users/me", {
+        method: "GET",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      });
 
       return response.ok;
     } catch (error) {
@@ -265,7 +268,7 @@ export const authService = {
   ): Promise<{ available: boolean; message: string }> {
     try {
       const response = await fetch(
-        `${API_URL}/api/v1/users/check-email?email=${encodeURIComponent(
+        `${API_BASE_URL}/api/v1/users/check-email?email=${encodeURIComponent(
           email
         )}`,
         {
@@ -305,7 +308,7 @@ export const authService = {
   ): Promise<{ available: boolean; message: string }> {
     try {
       const response = await fetch(
-        `${API_URL}/api/v1/users/check-loginId?loginId=${encodeURIComponent(
+        `${API_BASE_URL}/api/v1/users/check-loginId?loginId=${encodeURIComponent(
           loginId
         )}`,
         {

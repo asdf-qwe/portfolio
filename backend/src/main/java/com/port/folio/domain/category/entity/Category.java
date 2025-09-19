@@ -1,6 +1,7 @@
 package com.port.folio.domain.category.entity;
 
 import com.port.folio.domain.post.entity.File;
+import com.port.folio.domain.post.entity.Introduce;
 import com.port.folio.domain.post.entity.Post;
 import com.port.folio.domain.tab.entity.BasicTab;
 import com.port.folio.domain.tab.entity.Tab;
@@ -38,4 +39,7 @@ public class Category extends BaseEntity {
 
     @OneToOne
     private BasicTab basicTab;
+
+    @OneToOne(mappedBy = "category",cascade = CascadeType.REMOVE)
+    private Introduce introduce;
 }

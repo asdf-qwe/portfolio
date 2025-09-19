@@ -1,8 +1,7 @@
 package com.port.folio.domain.post.controller;
 
-import com.port.folio.domain.post.dto.CreatePostDto;
-import com.port.folio.domain.post.dto.PostListDto;
-import com.port.folio.domain.post.dto.PostResponse;
+import com.port.folio.domain.category.entity.Category;
+import com.port.folio.domain.post.dto.*;
 import com.port.folio.domain.post.entity.Post;
 import com.port.folio.domain.post.service.PostService;
 import lombok.RequiredArgsConstructor;
@@ -40,4 +39,26 @@ public class Ap1V1PostController {
         String message = postService.updatePost(dto, tabId);
         return ResponseEntity.ok(message);
     }
+
+    @PostMapping("/introduce")
+    public ResponseEntity<String> createIntroduce(@RequestBody CreateIntroduce req, @RequestParam Long categoryId) {
+        postService.createIntroduce(req, categoryId);
+
+        return ResponseEntity.ok("생성 완료");
+    }
+
+    @GetMapping("/introduce")
+    public ResponseEntity<IntroduceResponse> getIntroduce(@RequestParam Long categoryId){
+        IntroduceResponse introduceResponse = postService.getIntro(categoryId);
+        return ResponseEntity.ok(introduceResponse);
+    }
+
+    @PutMapping("/introduce")
+    public ResponseEntity<String> updateIntro(@RequestBody CreateIntroduce req, @RequestParam Long categoryId){
+        postService.updateIntro(req,categoryId);
+        return ResponseEntity.ok("수정 완료");
+    }
+
+
+
 }

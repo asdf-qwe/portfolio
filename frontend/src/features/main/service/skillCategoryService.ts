@@ -1,11 +1,12 @@
-import { api } from "@/lib/api";
 import {
   SkillCategoryRequest,
   SkillCategoryResponse,
 } from "../type/skillCategory";
 
 class SkillCategoryService {
-  private readonly baseUrl = "/api/skill";
+  private readonly baseUrl = `${
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+  }`;
 
   /**
    * 스킬 카테고리 변경
@@ -18,8 +19,26 @@ class SkillCategoryService {
     userId: number
   ): Promise<string> {
     try {
-      const response = await api.put(`${this.baseUrl}?userId=${userId}`, req);
-      return (response as { data: string }).data || "성공";
+      const response = await fetch(
+        `${this.baseUrl}api/skill?userId=${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(req),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `스킬 카테고리 변경 실패: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const text = await response.text();
+      return text || "성공";
     } catch (error) {
       console.error("스킬 카테고리 변경 실패:", error);
       throw error;
@@ -33,8 +52,25 @@ class SkillCategoryService {
    */
   async getSkillCategory(userId: number): Promise<SkillCategoryResponse> {
     try {
-      const response = await api.get(`${this.baseUrl}?userId=${userId}`);
-      return (response as { data: SkillCategoryResponse }).data;
+      const response = await fetch(
+        `${this.baseUrl}/api/skill?userId=${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "omit",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `스킬 카테고리 조회 실패: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data: SkillCategoryResponse = await response.json();
+      return data;
     } catch (error) {
       console.error("스킬 카테고리 조회 실패:", error);
       throw error;

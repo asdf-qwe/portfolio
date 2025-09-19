@@ -6,12 +6,15 @@ import ProjectHeader from "@/components/ProjectHeader";
 import {
   getPostByTab,
   updatePost,
-  getBasicTabs,
-  updateBasicTabContent,
+  getIntroduce,
+  createIntroduce,
+  updateIntroduce,
 } from "@/features/post/service/postService";
+import { PostResponse } from "@/features/post/types/post";
 import {
-  PostResponse,
-} from "@/features/post/types/post";
+  IntroduceResponse,
+  CreateIntroduce,
+} from "@/features/main/type/introduce";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { categoryService } from "@/features/category/service/categoryService";
 import { CategoryResponse } from "@/features/category/types/category";
@@ -50,13 +53,15 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string | null>(null);
 
-  // 프로젝트 소개 기본 탭 관련 상태
+  // 프로젝트 소개 introduce API 상태
   const [isEditMode, setIsEditMode] = useState(false);
-  const [introContent, setIntroContent] = useState("");
+  const [introduce, setIntroduce] = useState<IntroduceResponse | null>(null);
+  const [introduceExists, setIntroduceExists] = useState(false); // introduce 존재 여부
   const [isSaving, setIsSaving] = useState(false);
+  const [introLoading, setIntroLoading] = useState(true);
 
-  // 기본 탭 내용 상태 (사용하지 않는 변수 제거)
-  const [basicTabsLoading, setBasicTabsLoading] = useState(true);
+  // 제목 편집용 상태 (isEditMode와 함께 사용)
+  const [editCategoryTitle, setEditCategoryTitle] = useState("");
 
   // 자료 기본 탭 관련 상태
   const [resources, setResources] = useState<FileResource[]>([]);
@@ -92,39 +97,75 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       return;
     }
 
-    setIsEditMode(!isEditMode);
-    if (!isEditMode && (!introContent || introContent === "빈 게시글")) {
-      // 편집 모드로 진입 시 빈 템플릿 설정 (최초 편집 시 또는 빈 게시글인 경우)
-      setIntroContent(`# ${category?.categoryTitle || `카테고리 ${categoryId}`}
+    if (!isEditMode) {
+      // 편집 모드 진입 시
+      setEditCategoryTitle(category?.categoryTitle || "");
+      setIsEditMode(true);
 
-## 프로젝트 개요
-여기에 프로젝트에 대한 설명을 작성해주세요.
-
-## 주요 기능
-- 기능 1
-- 기능 2
-- 기능 3
-
-## 사용 기술
-- 기술 스택을 작성해주세요.
-
-## 프로젝트 목표
-- 목표를 작성해주세요.`);
+      // introduce가 없으면 템플릿 세팅
+      if (!introduce || !introduce.content) {
+        setIntroduce({
+          title: category?.categoryTitle || `카테고리 ${categoryId}`,
+          content: `## 프로젝트 개요\n여기에 프로젝트에 대한 설명을 작성해주세요.\n\n## 주요 기능\n- 기능 1\n- 기능 2\n- 기능 3\n\n## 사용 기술\n- 기술 스택을 작성해주세요.\n\n## 프로젝트 목표\n- 목표를 작성해주세요.`,
+        });
+      }
+    } else {
+      // 편집 모드 종료
+      setIsEditMode(false);
+      setEditCategoryTitle("");
     }
   };
 
-  // 프로젝트 소개 저장
+  // 전역 편집 모드 토글
+  // 프로젝트 소개 저장 (introduce API)
   const handleSave = async () => {
-    if (!canEdit) {
-      return;
-    }
+    if (!canEdit || !introduce) return;
 
     try {
       setIsSaving(true);
-      await updateBasicTabContent(parseInt(categoryId), introContent);
+
+      // 제목이 변경된 경우 카테고리 제목도 업데이트
+      if (
+        editCategoryTitle.trim() &&
+        editCategoryTitle !== category?.categoryTitle
+      ) {
+        // 임시로 로컬 상태 업데이트 (나중에 API 연결)
+        setCategory((prev) =>
+          prev ? { ...prev, categoryTitle: editCategoryTitle } : null
+        );
+      }
+
+      const titleToUse =
+        editCategoryTitle.trim() ||
+        category?.categoryTitle ||
+        `카테고리 ${categoryId}`;
+
+      if (introduceExists) {
+        // introduce가 이미 존재하면 수정
+        await updateIntroduce(
+          {
+            title: titleToUse,
+            content: introduce.content,
+          },
+          parseInt(categoryId)
+        );
+      } else {
+        // introduce가 없으면 새로 생성
+        await createIntroduce(
+          {
+            title: titleToUse,
+            content: introduce.content,
+          },
+          parseInt(categoryId)
+        );
+        setIntroduceExists(true); // 생성 후 존재 상태로 변경
+      }
+
       setIsEditMode(false);
+      setEditCategoryTitle("");
     } catch (error) {
       console.error("저장 실패:", error);
+      alert("저장에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsSaving(false);
     }
@@ -416,31 +457,44 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     fetchCategory();
   }, [categoryId, userId]);
 
-  // 기본 탭 내용 불러오기
+  // introduce 데이터 불러오기
   useEffect(() => {
-    const loadBasicTabs = async () => {
+    const loadIntroduce = async () => {
       try {
-        setBasicTabsLoading(true);
-        const basicTabData = await getBasicTabs(parseInt(categoryId));
+        setIntroLoading(true);
+        const introduceData = await getIntroduce(parseInt(categoryId));
 
-        // 첫 번째 기본 탭 내용을 프로젝트 소개에 사용
-        if (
-          basicTabData.basicContent1 &&
-          basicTabData.basicContent1 !== "빈 게시글"
-        ) {
-          setIntroContent(basicTabData.basicContent1);
+        // introduce 데이터가 있으면 설정
+        if (introduceData && introduceData.title && introduceData.content) {
+          setIntroduce({
+            title: introduceData.title,
+            content: introduceData.content,
+          });
+          setIntroduceExists(true); // introduce 존재함
+        } else {
+          // introduce 데이터가 없으면 기본값 설정
+          setIntroduce({
+            title: category?.categoryTitle || `카테고리 ${categoryId}`,
+            content: "빈 게시글",
+          });
+          setIntroduceExists(false); // introduce 존재하지 않음
         }
       } catch (error) {
-        console.error("기본 탭 내용 조회 실패:", error);
+        console.error("introduce 데이터 조회 실패:", error);
+        setIntroduce({
+          title: category?.categoryTitle || `카테고리 ${categoryId}`,
+          content: "빈 게시글",
+        });
+        setIntroduceExists(false); // 에러 시 존재하지 않는 것으로 처리
       } finally {
-        setBasicTabsLoading(false);
+        setIntroLoading(false);
       }
     };
 
     if (categoryId) {
-      loadBasicTabs();
+      loadIntroduce();
     }
-  }, [categoryId]);
+  }, [categoryId, category?.categoryTitle]);
 
   // 자료 목록 불러오기
   useEffect(() => {
@@ -576,13 +630,23 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         <div className="container mx-auto max-w-7xl px-10 -mt-8">
           <div className="bg-white p-12 rounded-lg shadow-sm">
             <div className="flex justify-between items-start mb-8">
-              <div>
-                <h1 className="text-4xl font-bold">
-                  {category?.categoryTitle || `카테고리 ${categoryId}`}
-                </h1>
+              <div className="flex-1 mr-4">
+                {isEditMode ? (
+                  <input
+                    type="text"
+                    value={editCategoryTitle}
+                    onChange={(e) => setEditCategoryTitle(e.target.value)}
+                    className="text-4xl font-bold bg-white border-2 border-blue-300 rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="카테고리 제목을 입력해주세요..."
+                  />
+                ) : (
+                  <h1 className="text-4xl font-bold">
+                    {category?.categoryTitle || `카테고리 ${categoryId}`}
+                  </h1>
+                )}
               </div>
               <div className="flex items-center gap-4">
-                {canEdit && (
+                {canEdit && !isEditMode && (
                   <button
                     onClick={handleDeleteCategory}
                     className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
@@ -731,11 +795,36 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                       <div className="md:col-span-2 space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
+                            프로젝트 제목
+                          </label>
+                          <input
+                            type="text"
+                            value={editCategoryTitle}
+                            onChange={(e) =>
+                              setEditCategoryTitle(e.target.value)
+                            }
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
+                            placeholder="프로젝트 제목을 입력해주세요..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             프로젝트 소개 내용 (마크다운 지원)
                           </label>
                           <textarea
-                            value={introContent}
-                            onChange={(e) => setIntroContent(e.target.value)}
+                            value={introduce?.content || ""}
+                            onChange={(e) =>
+                              setIntroduce((prev) =>
+                                prev
+                                  ? { ...prev, content: e.target.value }
+                                  : {
+                                      title:
+                                        category?.categoryTitle ||
+                                        `카테고리 ${categoryId}`,
+                                      content: e.target.value,
+                                    }
+                              )
+                            }
                             className="w-full h-80 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm resize-none"
                             placeholder="마크다운 형식으로 프로젝트 소개를 작성해주세요..."
                           />
@@ -854,8 +943,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                     <div className="grid md:grid-cols-5 gap-8 items-start">
                       {/* 텍스트 콘텐츠 영역 */}
                       <div className="md:col-span-2">
-                        {basicTabsLoading ? (
-                          /* 기본 탭 로딩 중 */
+                        {introLoading ? (
+                          /* introduce 로딩 중 */
                           <div className="bg-gray-50 p-6 rounded-lg">
                             <div className="animate-pulse space-y-4">
                               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -864,13 +953,16 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                               <div className="h-4 bg-gray-200 rounded w-2/3"></div>
                             </div>
                           </div>
-                        ) : introContent && introContent !== "빈 게시글" ? (
+                        ) : introduce?.content ? (
                           /* 저장된 내용이 있으면 표시 */
-                          <div className="bg-gray-50 p-6 rounded-lg">
-                            <div className="prose max-w-none">
-                              <pre className="whitespace-pre-wrap text-gray-700 text-base leading-relaxed">
-                                {introContent}
-                              </pre>
+                          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                            <div className="prose prose-lg max-w-none">
+                              <div
+                                className="whitespace-pre-wrap text-gray-800 leading-relaxed font-['system-ui','Segoe_UI','Roboto','Helvetica_Neue','Arial','Noto_Sans','sans-serif'] text-[15px] tracking-wide"
+                                style={{ lineHeight: "1.8" }}
+                              >
+                                {introduce.content}
+                              </div>
                             </div>
                           </div>
                         ) : (

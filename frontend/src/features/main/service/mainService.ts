@@ -1,6 +1,6 @@
 import { MainRequest, MainResponse } from "../type/main";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 /**
  * 메인 페이지 관련 API 서비스
@@ -13,13 +13,16 @@ export class MainService {
    */
   async getMain(userId: number): Promise<MainResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/main?userId=${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "omit", // 쿠키 사용하지 않음 (공개 조회)
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/main?userId=${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "omit", // 쿠키 사용하지 않음 (공개 조회)
+        }
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -43,14 +46,17 @@ export class MainService {
    */
   async updateMain(mainRequest: MainRequest, userId: number): Promise<string> {
     try {
-      const response = await fetch(`${API_BASE_URL}/main?userId=${userId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // 수정은 인증이 필요하므로 쿠키 포함
-        body: JSON.stringify(mainRequest),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/main?userId=${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // 수정은 인증이 필요하므로 쿠키 포함
+          body: JSON.stringify(mainRequest),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(
