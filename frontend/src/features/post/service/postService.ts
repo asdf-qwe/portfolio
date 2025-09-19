@@ -250,7 +250,7 @@ export async function createIntroduce(
 // 프로젝트 소개 조회
 export async function getIntroduce(
   categoryId: number
-): Promise<IntroduceResponse> {
+): Promise<IntroduceResponse | null> {
   const url = `${API_BASE_URL}/api/posts/introduce?categoryId=${categoryId}`;
 
   try {
@@ -262,6 +262,18 @@ export async function getIntroduce(
       credentials: "omit",
     });
 
+    // 404인 경우 데이터가 없음을 의미하므로 null 반환
+    if (response.status === 404) {
+      return null;
+    }
+
+    // 500 서버 에러인 경우도 null 반환 (데이터 없음으로 처리)
+    if (response.status === 500) {
+      console.warn("서버 에러로 인해 프로젝트 소개를 불러올 수 없습니다.");
+      return null;
+    }
+
+    // 기타 에러인 경우에만 throw
     if (!response.ok) {
       throw new Error(
         `프로젝트 소개 조회 실패: ${response.status} ${response.statusText}`
@@ -271,6 +283,13 @@ export async function getIntroduce(
     const data = await response.json();
     return data;
   } catch (error) {
+    // 네트워크 에러인 경우 null 반환
+    if (error instanceof TypeError) {
+      console.warn("네트워크 에러로 인해 프로젝트 소개를 불러올 수 없습니다.");
+      return null;
+    }
+
+    // 기타 예상치 못한 에러는 다시 throw
     console.error(`getIntroduce API 오류:`, error);
     throw error;
   }

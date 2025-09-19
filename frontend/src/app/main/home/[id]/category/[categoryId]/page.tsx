@@ -27,6 +27,42 @@ import {
 } from "@/features/upload/service/uploadService";
 import FileUpload from "@/features/upload/components/FileUpload";
 
+// 상수 정의
+const CONSTANTS = {
+  MAX_VIDEO_SIZE_MB: 100,
+  LOADING_SPINNER_SIZE: {
+    SMALL: "h-4 w-4",
+    MEDIUM: "h-8 w-8",
+    LARGE: "h-32 w-32",
+  },
+  COLORS: {
+    BLUE: "bg-blue-500 hover:bg-blue-600",
+    GREEN: "bg-green-500 hover:bg-green-600",
+    YELLOW: "bg-yellow-500 hover:bg-yellow-600",
+    GRAY: "bg-gray-500 hover:bg-gray-600",
+    RED: "bg-red-100 hover:bg-red-200 text-red-600",
+  },
+  ICON_SIZE: {
+    SMALL: "w-4 h-4",
+    MEDIUM: "w-10 h-10",
+    LARGE: "w-16 h-16",
+  },
+  GRID_COLS: "md:grid-cols-5",
+  ASPECT_RATIO: "aspect-[16/9]",
+  FILE_TYPES: [
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".ppt",
+    ".pptx",
+    ".xls",
+    ".xlsx",
+    ".txt",
+    ".zip",
+    ".rar",
+  ] as string[],
+} as const;
+
 interface FileResource {
   id: string;
   name: string;
@@ -129,19 +165,16 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         editCategoryTitle.trim() &&
         editCategoryTitle !== category?.categoryTitle
       ) {
-        // 임시로 로컬 상태 업데이트 (나중에 API 연결)
         setCategory((prev) =>
           prev ? { ...prev, categoryTitle: editCategoryTitle } : null
         );
       }
-
       const titleToUse =
         editCategoryTitle.trim() ||
         category?.categoryTitle ||
         `카테고리 ${categoryId}`;
 
       if (introduceExists) {
-        // introduce가 이미 존재하면 수정
         await updateIntroduce(
           {
             title: titleToUse,
@@ -150,7 +183,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
           parseInt(categoryId)
         );
       } else {
-        // introduce가 없으면 새로 생성
         await createIntroduce(
           {
             title: titleToUse,
@@ -158,9 +190,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
           },
           parseInt(categoryId)
         );
-        setIntroduceExists(true); // 생성 후 존재 상태로 변경
+        setIntroduceExists(true);
       }
-
       setIsEditMode(false);
       setEditCategoryTitle("");
     } catch (error) {
@@ -175,7 +206,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const loadResources = useCallback(async () => {
     try {
       setIsResourcesLoading(true);
-      // ✅ 백엔드 API에서 파일 목록 가져오기
       const fileUrls = await getFilesByCategory(parseInt(categoryId));
 
       // URL 목록을 FileResource 형태로 변환
@@ -185,8 +215,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
           id: `api_${index}`,
           name: fileName,
           url: url,
-          uploadDate: new Date().toISOString(), // 실제로는 백엔드에서 날짜 정보를 받아와야 함
-          size: 0, // 실제로는 백엔드에서 파일 크기 정보를 받아와야 함
+          uploadDate: new Date().toISOString(),
+          size: 0,
         };
       });
 
@@ -205,13 +235,13 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       name: fileName,
       url: url,
       uploadDate: new Date().toISOString(),
-      size: 0, // 실제로는 백엔드에서 파일 크기 정보를 받아와야 함
+      size: 0,
     };
 
     // 새 파일을 목록에 즉시 추가
     setResources((prev) => [newResource, ...prev]);
 
-    // 선택적으로 전체 목록을 다시 로드하여 서버와 동기화
+    // 전체 목록을 다시 로드하여 서버와 동기화
     setTimeout(() => {
       loadResources();
     }, 1000);
@@ -220,15 +250,16 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const handleDeleteResource = (id: string) => {
     const updatedResources = resources.filter((resource) => resource.id !== id);
     setResources(updatedResources);
-    // TODO: 실제 백엔드 API로 파일 삭제 구현 필요
   };
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "알 수 없음";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+
+    const units = ["Bytes", "KB", "MB", "GB"];
+    const unitIndex = Math.floor(Math.log(bytes) / Math.log(1024));
+    const size = (bytes / Math.pow(1024, unitIndex)).toFixed(2);
+
+    return `${size} ${units[unitIndex]}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -250,35 +281,21 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
     // 동영상 파일 검증
     if (!file.type.startsWith("video/")) {
-      console.warn("동영상 파일만 업로드 가능합니다.");
       return;
     }
 
-    // 파일 크기 검증 (100MB)
-    if (file.size > 100 * 1024 * 1024) {
-      console.warn("파일 크기는 100MB 이하여야 합니다.");
+    // 파일 크기 검증
+    if (file.size > CONSTANTS.MAX_VIDEO_SIZE_MB * 1024 * 1024) {
       return;
     }
 
     try {
       setIsUploadingVideo(true);
-      console.log(
-        `동영상 업로드 시작: ${file.name} (${(file.size / 1024 / 1024).toFixed(
-          2
-        )}MB)`
-      );
 
       const videoUrl = await uploadMainVideo(file, parseInt(categoryId));
       setMainVideoUrl(videoUrl);
-
-      console.log("대표 동영상 업로드 완료");
     } catch (error) {
-      console.error("대표 동영상 업로드 실패:", error);
-
-      // 구체적인 오류 메시지 로깅
-      if (error instanceof Error) {
-        console.error("오류 상세:", error.message);
-      }
+      // 동영상 업로드 실패 처리
     } finally {
       setIsUploadingVideo(false);
       // 파일 입력 초기화
@@ -290,26 +307,17 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const fetchTabs = useCallback(async () => {
     try {
       setTabsLoading(true);
-      console.log(`카테고리 ${categoryId}의 탭 목록을 조회합니다.`);
 
       const tabsData = await tabService.getTabs(parseInt(categoryId));
-      console.log(`탭 조회 결과: ${tabsData.length}개`);
 
       setTabs(tabsData);
 
       // 기본적으로 "프로젝트 소개" 탭을 활성화
       setActiveTab("intro");
-      console.log("프로젝트 소개 탭 활성화");
     } catch (error) {
-      console.error("탭 목록 조회 실패:", error);
       // 에러가 발생해도 빈 배열로 설정하여 UI가 정상적으로 표시되도록 함
       setTabs([]);
       setActiveTab("intro"); // 에러가 발생해도 기본 탭은 활성화
-
-      // 사용자에게 알림 (console로만, UI 방해하지 않음)
-      console.warn(
-        "탭 목록을 불러올 수 없습니다. 새 탭을 추가하여 시작해보세요."
-      );
     } finally {
       setTabsLoading(false);
     }
@@ -339,22 +347,14 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   // 탭별 게시글 가져오기
   const fetchTabPost = async (tabId: number) => {
     try {
-      console.log(`탭 ${tabId}의 게시글을 조회합니다.`);
       const post = await getPostByTab(tabId);
 
       setTabPosts((prev) => ({
         ...prev,
         [tabId.toString()]: post, // post는 null일 수 있음
       }));
-
-      if (post) {
-        console.log(`탭 ${tabId}의 게시글 조회 성공: ${post.title}`);
-      } else {
-        console.log(`탭 ${tabId}에 게시글이 없습니다.`);
-      }
     } catch (error) {
       console.error("탭 게시글 조회 실패:", error);
-      // 에러가 발생한 경우 null로 설정
       setTabPosts((prev) => ({
         ...prev,
         [tabId.toString()]: null,
@@ -372,14 +372,12 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       // 기존 내용이 있으면 로드
       setPostTitle(existingPost.title || "");
       setPostContent(existingPost.content || "");
-      console.log(`기존 게시글 편집 모드 - tabId: ${tabId}`);
     } else {
       // 내용이 없으면 기본 제목으로 시작
       setPostTitle(
         `${tabs.find((t) => t.id.toString() === tabId)?.tabName || "탭"} 내용`
       );
       setPostContent("");
-      console.log(`빈 게시글 편집 모드 - tabId: ${tabId}`);
     }
     setEditingTab(tabId);
   };
@@ -404,7 +402,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       const tabId = parseInt(editingTab);
 
       // 항상 수정 API 사용 (탭 생성 시 post가 자동으로 생성되므로)
-      console.log(`게시글 수정 - tabId: ${tabId}`);
       await updatePost(postData, tabId);
 
       // 게시글 저장 후 해당 탭의 게시글 다시 가져오기
@@ -425,6 +422,129 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     setEditingTab(null);
     setPostTitle("");
     setPostContent("");
+  };
+
+  // 탭 게시글 콘텐츠 렌더링 함수
+  const renderTabPostContent = (tab: TabRes) => {
+    const tabId = tab.id.toString();
+    const post = tabPosts[tab.id];
+    const hasContent = post && (post.title.trim() || post.content.trim());
+
+    if (editingTab === tabId) {
+      return (
+        <div className="max-w-2xl mx-auto">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            게시글 편집
+          </h3>
+
+          <div className="space-y-4 text-left">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                제목
+              </label>
+              <input
+                type="text"
+                value={postTitle}
+                onChange={(e) => setPostTitle(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg"
+                placeholder="게시글 제목을 입력하세요"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                내용
+              </label>
+              <textarea
+                value={postContent}
+                onChange={(e) => setPostContent(e.target.value)}
+                rows={10}
+                className="w-full p-3 border border-gray-300 rounded-lg"
+                placeholder="게시글 내용을 입력하세요"
+              />
+            </div>
+
+            <div className="flex space-x-2 justify-center">
+              <button
+                onClick={saveTabPost}
+                disabled={isSavingPost}
+                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+              >
+                {isSavingPost ? "저장 중..." : "저장"}
+              </button>
+              <button
+                onClick={cancelEditingTabPost}
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (hasContent) {
+      return (
+        <div className="max-w-2xl mx-auto text-left">
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-xl font-semibold text-gray-900">
+              {post.title || `${tab.tabName} 내용`}
+            </h3>
+            {canEdit && (
+              <button
+                onClick={() => startEditingTabPost(tabId)}
+                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+              >
+                편집
+              </button>
+            )}
+          </div>
+
+          <div className="prose max-w-none">
+            <pre className="whitespace-pre-wrap text-gray-700">
+              {post.content || "내용이 없습니다."}
+            </pre>
+          </div>
+
+          {post.createdAt && (
+            <p className="text-sm text-gray-500 mt-4">
+              작성일: {new Date(post.createdAt).toLocaleDateString()}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <svg
+          className="w-16 h-16 text-gray-400 mx-auto mb-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          {tab.tabName} 컨텐츠
+        </h3>
+        <p className="text-gray-500 mb-4">이 탭의 내용을 편집해보세요.</p>
+        {canEdit && (
+          <button
+            onClick={() => startEditingTabPost(tabId)}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            편집하기
+          </button>
+        )}
+      </div>
+    );
   };
 
   useEffect(() => {
@@ -470,22 +590,23 @@ export default function CategoryPage({ params }: CategoryPageProps) {
             title: introduceData.title,
             content: introduceData.content,
           });
-          setIntroduceExists(true); // introduce 존재함
+          setIntroduceExists(true);
         } else {
-          // introduce 데이터가 없으면 기본값 설정
+          // introduce 데이터가 없으면 기본값 설정 (null 또는 빈 데이터)
           setIntroduce({
             title: category?.categoryTitle || `카테고리 ${categoryId}`,
             content: "빈 게시글",
           });
-          setIntroduceExists(false); // introduce 존재하지 않음
+          setIntroduceExists(false);
         }
       } catch (error) {
+        // 예상치 못한 에러만 처리 (네트워크 에러나 서버 에러)
         console.error("introduce 데이터 조회 실패:", error);
         setIntroduce({
           title: category?.categoryTitle || `카테고리 ${categoryId}`,
           content: "빈 게시글",
         });
-        setIntroduceExists(false); // 에러 시 존재하지 않는 것으로 처리
+        setIntroduceExists(false);
       } finally {
         setIntroLoading(false);
       }
@@ -514,7 +635,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         }
       } catch (error) {
         console.error("대표 동영상 조회 실패:", error);
-        // 에러 시 동영상 없음으로 처리
       } finally {
         setIsVideoLoading(false);
       }
@@ -557,7 +677,9 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         <ProjectHeader />
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+            <div
+              className={`animate-spin rounded-full ${CONSTANTS.LOADING_SPINNER_SIZE.LARGE} border-b-2 border-blue-500 mx-auto`}
+            ></div>
             <p className="mt-4 text-gray-600">카테고리 정보를 불러오는 중...</p>
           </div>
         </div>
@@ -577,7 +699,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
             <p className="text-gray-600 mb-8">{error}</p>
             <button
               onClick={() => router.push(`/main/home/${userId}`)}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              className={`px-6 py-2 ${CONSTANTS.COLORS.BLUE} text-white rounded-lg`}
             >
               홈으로 돌아가기
             </button>
@@ -793,20 +915,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                     <div className="grid md:grid-cols-5 gap-8 items-start">
                       {/* 편집 영역 */}
                       <div className="md:col-span-2 space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            프로젝트 제목
-                          </label>
-                          <input
-                            type="text"
-                            value={editCategoryTitle}
-                            onChange={(e) =>
-                              setEditCategoryTitle(e.target.value)
-                            }
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
-                            placeholder="프로젝트 제목을 입력해주세요..."
-                          />
-                        </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             프로젝트 소개 내용 (마크다운 지원)
@@ -1131,19 +1239,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                         </h3>
                         <FileUpload
                           onUploadSuccess={handleUploadSuccess}
-                          categoryId={parseInt(categoryId)} // ✅ categoryId 전달
-                          allowedTypes={[
-                            ".pdf",
-                            ".doc",
-                            ".docx",
-                            ".ppt",
-                            ".pptx",
-                            ".xls",
-                            ".xlsx",
-                            ".txt",
-                            ".zip",
-                            ".rar",
-                          ]}
+                          categoryId={parseInt(categoryId)}
+                          allowedTypes={CONSTANTS.FILE_TYPES}
                           maxSizeMB={50}
                         />
                       </div>
@@ -1291,137 +1388,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                       {/* 탭 컨텐츠 */}
                       <div className="min-h-[300px] p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
                         <div className="text-center">
-                          {/* 게시글 편집 영역 */}
-                          {editingTab === tab.id.toString() ? (
-                            <div className="max-w-2xl mx-auto">
-                              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                                게시글 편집
-                              </h3>
-
-                              <div className="space-y-4 text-left">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    제목
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={postTitle}
-                                    onChange={(e) =>
-                                      setPostTitle(e.target.value)
-                                    }
-                                    className="w-full p-3 border border-gray-300 rounded-lg"
-                                    placeholder="게시글 제목을 입력하세요"
-                                  />
-                                </div>
-
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    내용
-                                  </label>
-                                  <textarea
-                                    value={postContent}
-                                    onChange={(e) =>
-                                      setPostContent(e.target.value)
-                                    }
-                                    rows={10}
-                                    className="w-full p-3 border border-gray-300 rounded-lg"
-                                    placeholder="게시글 내용을 입력하세요"
-                                  />
-                                </div>
-
-                                <div className="flex space-x-2 justify-center">
-                                  <button
-                                    onClick={saveTabPost}
-                                    disabled={isSavingPost}
-                                    className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
-                                  >
-                                    {isSavingPost ? "저장 중..." : "저장"}
-                                  </button>
-                                  <button
-                                    onClick={cancelEditingTabPost}
-                                    className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-                                  >
-                                    취소
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              {/* 게시글이 있고 내용이 있는 경우 */}
-                              {tabPosts[tab.id] &&
-                              (tabPosts[tab.id]!.title.trim() ||
-                                tabPosts[tab.id]!.content.trim()) ? (
-                                <div className="max-w-2xl mx-auto text-left">
-                                  <div className="flex justify-between items-start mb-4">
-                                    <h3 className="text-xl font-semibold text-gray-900">
-                                      {tabPosts[tab.id]!.title ||
-                                        `${tab.tabName} 내용`}
-                                    </h3>
-                                    {canEdit && (
-                                      <button
-                                        onClick={() =>
-                                          startEditingTabPost(tab.id.toString())
-                                        }
-                                        className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
-                                      >
-                                        편집
-                                      </button>
-                                    )}
-                                  </div>
-
-                                  <div className="prose max-w-none">
-                                    <pre className="whitespace-pre-wrap text-gray-700">
-                                      {tabPosts[tab.id]!.content ||
-                                        "내용이 없습니다."}
-                                    </pre>
-                                  </div>
-
-                                  {tabPosts[tab.id]!.createdAt && (
-                                    <p className="text-sm text-gray-500 mt-4">
-                                      작성일:{" "}
-                                      {new Date(
-                                        tabPosts[tab.id]!.createdAt!
-                                      ).toLocaleDateString()}
-                                    </p>
-                                  )}
-                                </div>
-                              ) : (
-                                /* 게시글이 없거나 내용이 비어있는 경우 */
-                                <div>
-                                  <svg
-                                    className="w-16 h-16 text-gray-400 mx-auto mb-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth="2"
-                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                  </svg>
-                                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                    {tab.tabName} 컨텐츠
-                                  </h3>
-                                  <p className="text-gray-500 mb-4">
-                                    이 탭의 내용을 편집해보세요.
-                                  </p>
-                                  {canEdit && (
-                                    <button
-                                      onClick={() =>
-                                        startEditingTabPost(tab.id.toString())
-                                      }
-                                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                                    >
-                                      편집하기
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </>
-                          )}
+                          {renderTabPostContent(tab)}
                         </div>
                       </div>
                     </div>
