@@ -20,7 +20,7 @@ class SkillCategoryService {
   ): Promise<string> {
     try {
       const response = await fetch(
-        `${this.baseUrl}api/skill?userId=${userId}`,
+        `${this.baseUrl}/api/skill?userId=${userId}`,
         {
           method: "PUT",
           headers: {
