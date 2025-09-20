@@ -12,3 +12,5 @@ export interface CardResponse {
   content: string;
   categoryName: CategoryName;
 }
+
+export type CardResponseOrNull = CardResponse | null;

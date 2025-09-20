@@ -1,4 +1,4 @@
-import { CardDto, CardResponse } from "../type/card";
+import { CardDto, CardResponse, CardResponseOrNull } from "../type/card";
 import { CategoryName } from "../type/skillCategory";
 
 class CardService {
@@ -60,7 +60,7 @@ class CardService {
   async getFirst(
     categoryName: CategoryName,
     skillId: number
-  ): Promise<CardResponse> {
+  ): Promise<CardResponseOrNull> {
     try {
       const response = await fetch(
         `${this.baseUrl}/api/card?categoryName=${categoryName}&skillId=${skillId}`,
@@ -77,18 +77,18 @@ class CardService {
         console.log(
           `getFirst: ${categoryName} 카테고리에 데이터가 없습니다 (${response.status})`
         );
-        return null as any;
+        return null;
       }
 
       const data = await response.json();
       console.log("getFirst 조회 성공:", data);
       return data;
-    } catch (error) {
+    } catch {
       console.log(
         `getFirst: ${categoryName} 카테고리 데이터 조회 중 네트워크 오류 - 더미 데이터 사용`
       );
       // 네트워크 에러 등 발생 시 null 반환 (정상적인 상황으로 처리)
-      return null as any;
+      return null;
     }
   } // 2번 카드 생성
   async createSecond(req: CardDto, skillId: number): Promise<string> {
@@ -140,7 +140,7 @@ class CardService {
   async getSecond(
     categoryName: CategoryName,
     skillId: number
-  ): Promise<CardResponse> {
+  ): Promise<CardResponseOrNull> {
     try {
       const response = await fetch(
         `${this.baseUrl}/api/card/second?categoryName=${categoryName}&skillId=${skillId}`,
@@ -157,18 +157,18 @@ class CardService {
         console.log(
           `getSecond: ${categoryName} 카테고리에 데이터가 없습니다 (${response.status})`
         );
-        return null as any;
+        return null;
       }
 
       const data = await response.json();
       console.log("getSecond 조회 성공:", data);
       return data;
-    } catch (error) {
+    } catch {
       console.log(
         `getSecond: ${categoryName} 카테고리 데이터 조회 중 네트워크 오류 - 더미 데이터 사용`
       );
       // 네트워크 에러 등 발생 시 null 반환 (정상적인 상황으로 처리)
-      return null as any;
+      return null;
     }
   }
 }
