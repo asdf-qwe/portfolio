@@ -433,11 +433,7 @@ export default function SkillsTabs({
         } else {
           // 생성
           console.log("새 카드 생성");
-          await cardService.createSecond(
-            cardDataToSave,
-            getCurrentTabCategory(),
-            userId
-          );
+          await cardService.createSecond(cardDataToSave, userId);
         }
       }
 
@@ -570,16 +566,16 @@ export default function SkillsTabs({
   return (
     <section className="pt-14 pb-8 px-6 bg-gray-50">
       <div className="container mx-auto max-w-6xl">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold">
+        <div className="flex justify-center items-center mb-8 relative">
+          <h2 className="text-4xl md:text-5xl font-bold text-center">
             {isLoading
               ? "로딩 중..."
               : tabsData[activeTab as keyof typeof tabsData].label}
           </h2>
 
-          {/* 드롭다운 (아이디 주인이면서 편집 모드일 때만 보임, 로딩 중에는 숨김) */}
+          {/* 드롭다운을 절대 위치로 배치 */}
           {!isLoading && canEdit && isEditMode && (
-            <div className="relative" ref={dropdownRef}>
+            <div className="absolute right-0" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className={`flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors ${
@@ -635,7 +631,7 @@ export default function SkillsTabs({
 
           {/* 일반 사용자용 현재 선택된 탭 표시 (편집 모드가 아니거나 일반 사용자, 로딩 중에는 숨김) */}
           {!isLoading && (!canEdit || !isEditMode) && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm">
+            <div className="absolute right-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm">
               {tabsData[activeTab as keyof typeof tabsData].icon}
               <span className="font-medium">
                 {tabsData[activeTab as keyof typeof tabsData].label}

@@ -39,14 +39,14 @@ public class ApiV1CardController {
     }
 
     @PutMapping("/second")
-    public ResponseEntity<String> updateSecond(@RequestBody CardDto req, @RequestParam Long skillId){
-        mainService.updateSecond(req, skillId);
+    public ResponseEntity<String> updateSecond(@RequestBody CardDto req, @RequestParam Long skillId, @RequestParam CategoryName categoryName){
+        mainService.updateSecond(req, skillId, categoryName);
         return ResponseEntity.ok("수정 완료");
     }
 
     @GetMapping("/second")
-    public ResponseEntity<CardDto> getSecond(@RequestParam Long skillId){
-        CardDto firstCardDto = mainService.getSecond(skillId);
+    public ResponseEntity<CardResponse> getSecond(@RequestParam CategoryName categoryName,@RequestParam Long skillId){
+        CardResponse firstCardDto = mainService.getSecond(skillId, categoryName);
         return ResponseEntity.ok(firstCardDto);
     }
 }

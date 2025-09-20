@@ -86,7 +86,7 @@ public class MainService {
     public CardResponse getFirst(CategoryName categoryName, Long skillId){
         FirstCard firstCard = firstCardRepository.findBySkillCategory_IdAndCategoryName(skillId, categoryName)
                 .orElseThrow(()-> new IllegalArgumentException("카테고리 없음"));
-        return new CardResponse(firstCard.getTitle(), firstCard.getSubTitle(), firstCard.getContent(),firstCard.getSkillCategory().getName());
+        return new CardResponse(firstCard.getTitle(), firstCard.getSubTitle(), firstCard.getContent(),firstCard.getCategoryName());
     }
 
     public void createSecond(CardDto req, Long skillId){
@@ -97,22 +97,25 @@ public class MainService {
                 .title(req.getTitle())
                 .subTitle(req.getSubTitle())
                 .content(req.getContent())
+                .categoryName(skillCategory.getName())
                 .skillCategory(skillCategory)
                 .build();
 
         secondCardRepository.save(secondCard);
     }
 
-    public void updateSecond(CardDto req, Long skillId){
-        SecondCard secondCard = secondCardRepository.findBySkillCategoryId(skillId);
+    public void updateSecond(CardDto req, Long skillId, CategoryName categoryName){
+        SecondCard secondCard = secondCardRepository.findBySkillCategory_IdAndCategoryName(skillId, categoryName)
+                .orElseThrow(()-> new IllegalArgumentException("카테고리 없음"));
         secondCard.setTitle(req.getTitle());
         secondCard.setSubTitle(req.getSubTitle());
         secondCard.setContent(req.getContent());
         secondCardRepository.save(secondCard);
     }
 
-    public CardDto getSecond(Long skillId){
-        SecondCard secondCard = secondCardRepository.findBySkillCategoryId(skillId);
-        return new CardDto(secondCard.getTitle(), secondCard.getSubTitle(), secondCard.getContent());
+    public CardResponse getSecond(Long skillId, CategoryName categoryName){
+        SecondCard secondCard = secondCardRepository.findBySkillCategory_IdAndCategoryName(skillId, categoryName)
+                .orElseThrow(()-> new IllegalArgumentException("카테고리 없음"));
+        return new CardResponse(secondCard.getTitle(), secondCard.getSubTitle(), secondCard.getContent(),secondCard.getCategoryName());
     }
 }

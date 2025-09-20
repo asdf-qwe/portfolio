@@ -1,9 +1,7 @@
 package com.port.folio.domain.main.entity;
 
 import com.port.folio.global.Jpa.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,6 +16,9 @@ public class SecondCard extends BaseEntity {
     private String title;
     private String subTitle;
     private String content;
+
+    @Enumerated(EnumType.STRING)
+    private CategoryName categoryName;
 
     @ManyToOne
     @JoinColumn(name = "skill_category_id")

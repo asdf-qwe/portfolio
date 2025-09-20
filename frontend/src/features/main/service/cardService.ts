@@ -91,13 +91,9 @@ class CardService {
       return null as any;
     }
   } // 2번 카드 생성
-  async createSecond(
-    req: CardDto,
-    categoryName: CategoryName,
-    skillId: number
-  ): Promise<string> {
+  async createSecond(req: CardDto, skillId: number): Promise<string> {
     const response = await fetch(
-      `${this.baseUrl}/api/card/second?categoryName=${categoryName}&skillId=${skillId}`,
+      `${this.baseUrl}/api/card/second?skillId=${skillId}`,
       {
         method: "POST",
         headers: {
