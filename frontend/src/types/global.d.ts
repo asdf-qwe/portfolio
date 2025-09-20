@@ -14,20 +14,6 @@ interface KakaoPlace {
   distance: string;
 }
 
-interface KakaoPlacesSearchResult {
-  meta: {
-    total_count: number;
-    pageable_count: number;
-    is_end: boolean;
-    same_name: {
-      region: string[];
-      keyword: string;
-      selected_region: string;
-    };
-  };
-  documents: KakaoPlace[];
-}
-
 interface KakaoStatus {
   OK: string;
   ERROR: string;
@@ -227,7 +213,8 @@ declare global {
         Marker: new (options: {
           map?: KakaoMap;
           position: KakaoLatLng;
-          image?: any;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          image?: any; // Kakao Maps marker image object
           title?: string;
           clickable?: boolean;
           draggable?: boolean;
@@ -264,9 +251,11 @@ declare global {
           LEFT: string;
           RIGHT: string;
         };
-        [key: string]: any; // 기타 동적 속성들
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [key: string]: any; // Kakao Maps SDK의 동적 속성들을 위한 인덱스 시그니처
       };
-      [key: string]: any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      [key: string]: any; // Kakao 객체의 추가 속성들을 위한 인덱스 시그니처
     };
   }
 }
