@@ -16,6 +16,22 @@ import { mainService } from "@/features/main/service/mainService";
 import { MainResponse } from "@/features/main/type/main";
 import Image from "next/image";
 
+// Kakao Maps 장소 검색 결과 타입
+interface KakaoPlace {
+  id: string;
+  place_name: string;
+  category_name: string;
+  category_group_code: string;
+  category_group_name: string;
+  phone: string;
+  address_name: string;
+  road_address_name: string;
+  x: string; // longitude
+  y: string; // latitude
+  place_url: string;
+  distance: string;
+}
+
 interface HomePageProps {
   params: Promise<{
     id: string;
@@ -72,7 +88,7 @@ export default function HomePage({ params }: HomePageProps) {
   // 지도 검색 모달 상태
   const [isMapSearchModalOpen, setIsMapSearchModalOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<KakaoPlace[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   // 카테고리 데이터 가져오기
@@ -197,7 +213,7 @@ export default function HomePage({ params }: HomePageProps) {
     try {
       const ps = new window.kakao.maps.services.Places();
 
-      ps.keywordSearch(keyword, (data: any[], status: any) => {
+      ps.keywordSearch(keyword, (data: KakaoPlace[], status: string) => {
         if (status === window.kakao.maps.services.Status.OK) {
           setSearchResults(data);
         } else {
@@ -213,7 +229,7 @@ export default function HomePage({ params }: HomePageProps) {
   };
 
   // 검색 결과 선택 함수
-  const selectPlace = (place: any) => {
+  const selectPlace = (place: KakaoPlace) => {
     setCurrentLocation({
       text: place.place_name,
       lat: parseFloat(place.y),
