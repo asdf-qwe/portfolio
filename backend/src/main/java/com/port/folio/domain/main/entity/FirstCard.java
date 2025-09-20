@@ -8,17 +8,19 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
-
 @Entity
 @SuperBuilder
 @Getter
 @Setter
 @NoArgsConstructor
-public class Card extends BaseEntity {
+public class FirstCard extends BaseEntity {
 
     private String title;
     private String subTitle;
+    private String content;
+
+    @Enumerated(EnumType.STRING)
+    private CategoryName categoryName;
 
     @ManyToOne
     @JoinColumn(name = "skill_category_id")

@@ -21,7 +21,10 @@ public class SkillCategory extends BaseEntity {
     private CategoryName name;
 
     @OneToMany(mappedBy = "skillCategory", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Card> cards;
+    private List<FirstCard> firstCards;
+
+    @OneToMany(mappedBy = "skillCategory", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FirstCard> secondCards;
 
     @OneToOne
     private User user;

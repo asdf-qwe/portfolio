@@ -1,18 +1,12 @@
 package com.port.folio.domain.main.service;
 
-import com.port.folio.domain.main.dto.MainRequest;
-import com.port.folio.domain.main.dto.MainResponse;
-import com.port.folio.domain.main.dto.SkillCategoryRequest;
-import com.port.folio.domain.main.dto.SkillCategoryResponse;
-import com.port.folio.domain.main.entity.CategoryName;
-import com.port.folio.domain.main.entity.Main;
-import com.port.folio.domain.main.entity.SkillCategory;
+import com.port.folio.domain.main.dto.*;
+import com.port.folio.domain.main.entity.*;
+import com.port.folio.domain.main.repository.FirstCardRepository;
 import com.port.folio.domain.main.repository.MainRepository;
+import com.port.folio.domain.main.repository.SecondCardRepository;
 import com.port.folio.domain.main.repository.SkillCategoryRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.lang.Contract;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class MainService {
     private final MainRepository mainRepository;
     private final SkillCategoryRepository skillCategoryRepository;
+    private final FirstCardRepository firstCardRepository;
+    private final SecondCardRepository secondCardRepository;
 
     public MainResponse getMain(Long userId){
         Main main = mainRepository.findByUserId(userId);
@@ -63,5 +59,60 @@ public class MainService {
         );
     }
 
+    public void createFirst(CardDto req, Long skillId){
+        SkillCategory skillCategory = skillCategoryRepository.findById(skillId)
+                .orElseThrow(()-> new IllegalArgumentException("카테고리를 찾을 수 없습니다."));
 
+        FirstCard firstCard = FirstCard.builder()
+                .title(req.getTitle())
+                .subTitle(req.getSubTitle())
+                .content(req.getContent())
+                .categoryName(skillCategory.getName())
+                .skillCategory(skillCategory)
+                .build();
+
+        firstCardRepository.save(firstCard);
+    }
+
+    public void updateFirst(CardDto req, Long skillId, CategoryName categoryName){
+        FirstCard firstCard = firstCardRepository.findBySkillCategory_IdAndCategoryName(skillId, categoryName)
+                .orElseThrow(()-> new IllegalArgumentException("카테고리 없음"));
+        firstCard.setTitle(req.getTitle());
+        firstCard.setSubTitle(req.getSubTitle());
+        firstCard.setContent(req.getContent());
+        firstCardRepository.save(firstCard);
+    }
+
+    public CardResponse getFirst(CategoryName categoryName, Long skillId){
+        FirstCard firstCard = firstCardRepository.findBySkillCategory_IdAndCategoryName(skillId, categoryName)
+                .orElseThrow(()-> new IllegalArgumentException("카테고리 없음"));
+        return new CardResponse(firstCard.getTitle(), firstCard.getSubTitle(), firstCard.getContent(),firstCard.getSkillCategory().getName());
+    }
+
+    public void createSecond(CardDto req, Long skillId){
+        SkillCategory skillCategory = skillCategoryRepository.findById(skillId)
+                .orElseThrow(()-> new IllegalArgumentException("카테고리를 찾을 수 없습니다."));
+
+        SecondCard secondCard = SecondCard.builder()
+                .title(req.getTitle())
+                .subTitle(req.getSubTitle())
+                .content(req.getContent())
+                .skillCategory(skillCategory)
+                .build();
+
+        secondCardRepository.save(secondCard);
+    }
+
+    public void updateSecond(CardDto req, Long skillId){
+        SecondCard secondCard = secondCardRepository.findBySkillCategoryId(skillId);
+        secondCard.setTitle(req.getTitle());
+        secondCard.setSubTitle(req.getSubTitle());
+        secondCard.setContent(req.getContent());
+        secondCardRepository.save(secondCard);
+    }
+
+    public CardDto getSecond(Long skillId){
+        SecondCard secondCard = secondCardRepository.findBySkillCategoryId(skillId);
+        return new CardDto(secondCard.getTitle(), secondCard.getSubTitle(), secondCard.getContent());
+    }
 }

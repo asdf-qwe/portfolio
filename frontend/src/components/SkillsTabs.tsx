@@ -15,10 +15,12 @@ import {
   ChartBarIcon,
 } from "@heroicons/react/24/outline";
 import { skillCategoryService } from "@/features/main/service/skillCategoryService";
+import { cardService } from "@/features/main/service/cardService";
 import {
   CategoryName,
   SkillCategoryRequest,
 } from "@/features/main/type/skillCategory";
+import { CardDto } from "@/features/main/type/card";
 
 interface SkillsTabsProps {
   canEdit: boolean;
@@ -36,6 +38,30 @@ export default function SkillsTabs({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // 카드 데이터 상태
+  const [cardData, setCardData] = useState<{
+    first: CardDto | null;
+    second: CardDto | null;
+  }>({
+    first: null,
+    second: null,
+  });
+  const [isCardLoading, setIsCardLoading] = useState(false);
+  const [isCardEditing, setIsCardEditing] = useState<{
+    first: boolean;
+    second: boolean;
+  }>({
+    first: false,
+    second: false,
+  });
+  const [editCardData, setEditCardData] = useState<{
+    first: CardDto;
+    second: CardDto;
+  }>({
+    first: { title: "", subTitle: "", content: "" },
+    second: { title: "", subTitle: "", content: "" },
+  });
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
@@ -130,6 +156,56 @@ export default function SkillsTabs({
     }
   }, [userId]);
 
+  // 카드 데이터 조회
+  useEffect(() => {
+    const fetchCardData = async () => {
+      if (!userId) return;
+
+      try {
+        setIsCardLoading(true);
+        console.log(
+          `카드 데이터 조회 시작 - userId: ${userId}, category: ${getCurrentTabCategory()}`
+        );
+
+        const [firstCard, secondCard] = await Promise.all([
+          cardService
+            .getFirst(getCurrentTabCategory(), userId)
+            .catch((error) => {
+              console.log("getFirst: 데이터 없음 - 더미 데이터 사용");
+              return null;
+            }),
+          cardService
+            .getSecond(getCurrentTabCategory(), userId)
+            .catch((error) => {
+              console.log("getSecond: 데이터 없음 - 더미 데이터 사용");
+              return null;
+            }),
+        ]);
+
+        console.log("카드 데이터 조회 완료:", { firstCard, secondCard });
+
+        setCardData({
+          first: firstCard,
+          second: secondCard,
+        });
+      } catch (error) {
+        console.log(
+          "카드 데이터 조회 중 예상치 못한 오류 발생 - 더미 데이터 사용:",
+          error
+        );
+        // 조회 실패 시 null 유지 (더미 데이터 사용)
+        setCardData({
+          first: null,
+          second: null,
+        });
+      } finally {
+        setIsCardLoading(false);
+      }
+    };
+
+    fetchCardData();
+  }, [userId, activeTab]); // activeTab도 의존성에 추가하여 탭 변경 시 재조회
+
   // 카테고리 변경 함수
   const handleCategoryChange = async (newTabKey: string) => {
     if (!canEdit || !isEditMode) return;
@@ -142,8 +218,53 @@ export default function SkillsTabs({
       };
 
       await skillCategoryService.changeCategory(request, userId);
+
+      // 카테고리 변경 후 새로운 카테고리의 카드 데이터 불러오기
+      console.log(
+        `카테고리 변경: ${activeTab} -> ${newTabKey}, 새로운 카테고리: ${tabData.categoryName}`
+      );
+      const [firstCard, secondCard] = await Promise.all([
+        cardService.getFirst(tabData.categoryName, userId).catch((error) => {
+          console.log(
+            `카테고리 변경 후 getFirst: 데이터 없음 - 더미 데이터 사용 (${tabData.categoryName})`
+          );
+          return null;
+        }),
+        cardService.getSecond(tabData.categoryName, userId).catch((error) => {
+          console.log(
+            `카테고리 변경 후 getSecond: 데이터 없음 - 더미 데이터 사용 (${tabData.categoryName})`
+          );
+          return null;
+        }),
+      ]);
+
+      console.log("카테고리 변경 후 데이터 로드 완료:", {
+        firstCard,
+        secondCard,
+      });
+
+      // 카드 데이터 업데이트
+      setCardData({
+        first: firstCard,
+        second: secondCard,
+      });
+
+      // 편집 상태 초기화
+      setIsCardEditing({
+        first: false,
+        second: false,
+      });
+
+      // 편집 데이터 초기화
+      setEditCardData({
+        first: firstCard || getDummyData(newTabKey).first,
+        second: secondCard || getDummyData(newTabKey).second,
+      });
+
       setActiveTab(newTabKey);
       setIsDropdownOpen(false);
+
+      console.log("카테고리 변경 완료");
     } catch (error) {
       console.error("스킬 카테고리 변경 실패:", error);
       // 에러 발생 시 사용자에게 알림 (선택사항)
@@ -151,6 +272,235 @@ export default function SkillsTabs({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // 더미 데이터 가져오기
+  const getDummyData = (tabKey: string) => {
+    switch (tabKey) {
+      case "skills":
+        return {
+          first: {
+            title: "기술적 전문성",
+            subTitle: "다양한 기술 스택을 활용한 개발 역량",
+            content:
+              "풀스택 개발부터 시스템 설계까지 다양한 기술 영역에서 전문성을 발휘합니다. 성능 최적화와 보안 구현을 통해 안정적이고 효율적인 시스템을 구축하며, 최신 기술 트렌드를 지속적으로 학습하여 프로젝트에 적용합니다.",
+          },
+          second: {
+            title: "문제 해결",
+            subTitle: "복잡한 문제를 체계적으로 분석하고 해결",
+            content:
+              "논리적 사고를 바탕으로 복잡한 문제를 단계별로 분석하고 해결책을 도출합니다. 효과적인 디버깅과 알고리즘 설계를 통해 최적의 솔루션을 제시하며, 문제 해결 과정에서 체계적인 접근 방식을 활용합니다.",
+          },
+        };
+      case "personality":
+        return {
+          first: {
+            title: "창의적 사고",
+            subTitle: "새로운 아이디어와 독창적인 접근 방식",
+            content:
+              "혁신적인 사고를 통해 기존의 틀을 벗어난 새로운 해결책을 제시합니다. 다양한 관점에서 문제를 바라보며 아이디어를 발굴하고, 창의적인 접근 방식으로 독창적인 결과물을 만들어냅니다.",
+          },
+          second: {
+            title: "소통 & 협업",
+            subTitle: "원활한 커뮤니케이션과 팀워크 능력",
+            content:
+              "적극적인 소통으로 팀원들과 효과적으로 협업합니다. 경청 능력을 바탕으로 상대방의 의견을 존중하며, 팀워크를 통해 시너지 효과를 창출하고 필요시 리더십을 발휘하여 팀을 이끕니다.",
+          },
+        };
+      case "interests":
+        return {
+          first: {
+            title: "독서 & 학습",
+            subTitle: "새로운 지식 습득과 인사이트 탐구",
+            content:
+              "전문서적을 통한 깊이 있는 학습과 온라인 강의를 활용한 지속적인 성장을 추구합니다. 세미나 참석과 독서 모임을 통해 다양한 관점을 접하며, 새로운 인사이트를 얻고 지식을 확장해 나갑니다.",
+          },
+          second: {
+            title: "운동 & 건강",
+            subTitle: "건강한 라이프스타일과 체력 관리",
+            content:
+              "규칙적인 헬스와 러닝을 통해 체력을 관리하고, 요가로 몸과 마음의 균형을 유지합니다. 아웃도어 활동을 즐기며 자연과 함께하는 건강한 라이프스타일을 실천하고 있습니다.",
+          },
+        };
+      case "experience":
+        return {
+          first: {
+            title: "프로젝트 경험",
+            subTitle: "다양한 프로젝트를 통한 실무 경험",
+            content:
+              "다양한 프로젝트를 성공적으로 완수하며 실무 경험을 쌓았습니다. 팀 리딩 역할을 통해 리더십을 발휘하고, 복잡한 문제 상황에서도 체계적인 해결책을 제시하여 목표 성과를 달성했습니다.",
+          },
+          second: {
+            title: "학습 & 자격",
+            subTitle: "전문성 향상을 위한 지속적 학습",
+            content:
+              "전문성 향상을 위해 관련 자격증을 취득하고 다양한 교육과정을 수료했습니다. 지속적인 스킬 향상을 통해 지식의 폭과 깊이를 확장하며, 변화하는 기술 트렌드에 발맞춰 성장하고 있습니다.",
+          },
+        };
+      default:
+        return {
+          first: { title: "", subTitle: "", content: "" },
+          second: { title: "", subTitle: "", content: "" },
+        };
+    }
+  };
+
+  // 현재 탭의 카테고리 가져오기
+  const getCurrentTabCategory = (): CategoryName => {
+    return tabsData[activeTab as keyof typeof tabsData].categoryName;
+  };
+
+  // 카드 데이터 가져오기 (서버 데이터 우선, 없으면 더미 데이터)
+  const getCardData = (position: "first" | "second") => {
+    const serverData = cardData[position];
+    if (serverData) {
+      return serverData;
+    }
+    return getDummyData(activeTab)[position];
+  };
+
+  // 카드 아이콘 가져오기
+  const getCardIcon = (position: "first" | "second") => {
+    const dummyData = getDummyData(activeTab)[position];
+    switch (activeTab) {
+      case "skills":
+        return position === "first" ? (
+          <BoltIcon className="w-8 h-8 text-blue-500" />
+        ) : (
+          <WrenchScrewdriverIcon className="w-8 h-8 text-blue-500" />
+        );
+      case "personality":
+        return position === "first" ? (
+          <LightBulbIcon className="w-8 h-8 text-blue-500" />
+        ) : (
+          <UserGroupIcon className="w-8 h-8 text-blue-500" />
+        );
+      case "interests":
+        return position === "first" ? (
+          <BookOpenIcon className="w-8 h-8 text-blue-500" />
+        ) : (
+          <HeartIcon className="w-8 h-8 text-blue-500" />
+        );
+      case "experience":
+        return position === "first" ? (
+          <BriefcaseIcon className="w-8 h-8 text-blue-500" />
+        ) : (
+          <AcademicCapIcon className="w-8 h-8 text-blue-500" />
+        );
+      default:
+        return <BoltIcon className="w-8 h-8 text-blue-500" />;
+    }
+  };
+
+  // 카드 저장 함수
+  const saveCard = async (position: "first" | "second") => {
+    if (!canEdit || !isEditMode) return;
+
+    try {
+      setIsCardLoading(true);
+      const cardDataToSave = editCardData[position];
+      console.log(
+        `카드 저장 시작 - position: ${position}, category: ${getCurrentTabCategory()}`
+      );
+
+      if (position === "first") {
+        if (cardData.first) {
+          // 수정
+          console.log("기존 카드 수정");
+          await cardService.updateFirst(
+            cardDataToSave,
+            getCurrentTabCategory(),
+            userId
+          );
+        } else {
+          // 생성
+          console.log("새 카드 생성");
+          await cardService.createFirst(
+            cardDataToSave,
+            getCurrentTabCategory(),
+            userId
+          );
+        }
+      } else {
+        if (cardData.second) {
+          // 수정
+          console.log("기존 카드 수정");
+          await cardService.updateSecond(
+            cardDataToSave,
+            getCurrentTabCategory(),
+            userId
+          );
+        } else {
+          // 생성
+          console.log("새 카드 생성");
+          await cardService.createSecond(
+            cardDataToSave,
+            getCurrentTabCategory(),
+            userId
+          );
+        }
+      }
+
+      // 저장 후 데이터 새로고침
+      console.log("저장 후 데이터 새로고침 시작");
+      const [firstCard, secondCard] = await Promise.all([
+        cardService.getFirst(getCurrentTabCategory(), userId).catch((error) => {
+          console.log("저장 후 getFirst: 데이터 없음 - 더미 데이터 사용");
+          return null;
+        }),
+        cardService
+          .getSecond(getCurrentTabCategory(), userId)
+          .catch((error) => {
+            console.log("저장 후 getSecond: 데이터 없음 - 더미 데이터 사용");
+            return null;
+          }),
+      ]);
+
+      console.log("저장 후 데이터 새로고침 완료:", { firstCard, secondCard });
+
+      setCardData({
+        first: firstCard,
+        second: secondCard,
+      });
+
+      // 편집 모드 종료
+      setIsCardEditing({
+        ...isCardEditing,
+        [position]: false,
+      });
+
+      console.log("카드 저장 완료");
+    } catch (error) {
+      console.error("카드 저장 중 예상치 못한 오류 발생:", error);
+      alert("카드 저장에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsCardLoading(false);
+    }
+  };
+
+  // 카드 편집 시작 함수
+  const startEditingCard = (position: "first" | "second") => {
+    const card = getCardData(position);
+    setEditCardData({
+      ...editCardData,
+      [position]: {
+        title: card.title || "",
+        subTitle: card.subTitle || "",
+        content: card.content || "",
+      },
+    });
+    setIsCardEditing({
+      ...isCardEditing,
+      [position]: true,
+    });
+  };
+
+  // 카드 편집 취소 함수
+  const cancelEditingCard = (position: "first" | "second") => {
+    setIsCardEditing({
+      ...isCardEditing,
+      [position]: false,
+    });
   };
 
   // 기술 스택 데이터
@@ -308,104 +658,756 @@ export default function SkillsTabs({
               {/* 기술 스택 탭 */}
               {activeTab === "skills" && (
                 <div className="grid md:grid-cols-2 gap-8 justify-items-center">
-                  {Object.entries(coreCompetencies).map(
-                    ([category, competency]) => (
+                  {["first", "second"].map((position) => {
+                    const card = getCardData(position as "first" | "second");
+                    const icon = getCardIcon(position as "first" | "second");
+                    const isEditing =
+                      isCardEditing[position as "first" | "second"];
+
+                    return (
                       <div
-                        key={category}
+                        key={position}
                         className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-blue-500 w-full max-w-lg"
                       >
-                        <div className="flex items-center mb-6">
-                          <div className="mr-3">{competency.icon}</div>
-                          <h3 className="text-xl font-semibold text-gray-800">
-                            {category}
-                          </h3>
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center">
+                            <div className="mr-3">{icon}</div>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={
+                                  editCardData[position as "first" | "second"]
+                                    .title
+                                }
+                                onChange={(e) =>
+                                  setEditCardData({
+                                    ...editCardData,
+                                    [position]: {
+                                      ...editCardData[
+                                        position as "first" | "second"
+                                      ],
+                                      title: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="text-xl font-semibold text-gray-800 border-b border-gray-300 focus:border-blue-500 outline-none"
+                                placeholder="제목을 입력하세요"
+                              />
+                            ) : (
+                              <h3 className="text-xl font-semibold text-gray-800">
+                                {card.title}
+                              </h3>
+                            )}
+                          </div>
+                          {canEdit && isEditMode && (
+                            <div className="flex gap-2">
+                              {isEditing ? (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      saveCard(position as "first" | "second")
+                                    }
+                                    disabled={isCardLoading}
+                                    className="text-green-500 hover:text-green-700 p-1 disabled:opacity-50"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M5 13l4 4L19 7"
+                                      />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      cancelEditingCard(
+                                        position as "first" | "second"
+                                      )
+                                    }
+                                    disabled={isCardLoading}
+                                    className="text-red-500 hover:text-red-700 p-1 disabled:opacity-50"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                      />
+                                    </svg>
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    startEditingCard(
+                                      position as "first" | "second"
+                                    )
+                                  }
+                                  className="text-blue-500 hover:text-blue-700 p-1"
+                                >
+                                  <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <p className="text-gray-600 mb-6 text-sm leading-relaxed">
-                          {competency.description}
-                        </p>
-                        <div className="text-gray-700 text-sm leading-relaxed">
-                          {competency.content}
-                        </div>
+                        {isEditing ? (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                부제목
+                              </label>
+                              <input
+                                type="text"
+                                value={
+                                  editCardData[position as "first" | "second"]
+                                    .subTitle
+                                }
+                                onChange={(e) =>
+                                  setEditCardData({
+                                    ...editCardData,
+                                    [position]: {
+                                      ...editCardData[
+                                        position as "first" | "second"
+                                      ],
+                                      subTitle: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                placeholder="부제목을 입력하세요"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                내용
+                              </label>
+                              <textarea
+                                value={
+                                  editCardData[position as "first" | "second"]
+                                    .content
+                                }
+                                onChange={(e) =>
+                                  setEditCardData({
+                                    ...editCardData,
+                                    [position]: {
+                                      ...editCardData[
+                                        position as "first" | "second"
+                                      ],
+                                      content: e.target.value,
+                                    },
+                                  })
+                                }
+                                rows={4}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                placeholder="내용을 입력하세요"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                              {card.subTitle}
+                            </p>
+                            <div className="text-gray-700 text-sm leading-relaxed">
+                              {card.content}
+                            </div>
+                          </>
+                        )}
                       </div>
-                    )
-                  )}
+                    );
+                  })}
                 </div>
               )}
 
               {/* 성격 & 가치관 탭 */}
               {activeTab === "personality" && (
                 <div className="grid md:grid-cols-2 gap-8 justify-items-center">
-                  {Object.entries(personalityTraits).map(
-                    ([category, trait]) => (
+                  {["first", "second"].map((position) => {
+                    const card = getCardData(position as "first" | "second");
+                    const icon = getCardIcon(position as "first" | "second");
+                    const isEditing =
+                      isCardEditing[position as "first" | "second"];
+
+                    return (
                       <div
-                        key={category}
+                        key={position}
                         className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-blue-500 w-full max-w-lg"
                       >
-                        <div className="flex items-center mb-6">
-                          <div className="mr-3">{trait.icon}</div>
-                          <h3 className="text-xl font-semibold text-gray-800">
-                            {category}
-                          </h3>
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center">
+                            <div className="mr-3">{icon}</div>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={
+                                  editCardData[position as "first" | "second"]
+                                    .title
+                                }
+                                onChange={(e) =>
+                                  setEditCardData({
+                                    ...editCardData,
+                                    [position]: {
+                                      ...editCardData[
+                                        position as "first" | "second"
+                                      ],
+                                      title: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="text-xl font-semibold text-gray-800 border-b border-gray-300 focus:border-blue-500 outline-none"
+                                placeholder="제목을 입력하세요"
+                              />
+                            ) : (
+                              <h3 className="text-xl font-semibold text-gray-800">
+                                {card.title}
+                              </h3>
+                            )}
+                          </div>
+                          {canEdit && isEditMode && (
+                            <div className="flex gap-2">
+                              {isEditing ? (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      saveCard(position as "first" | "second")
+                                    }
+                                    disabled={isCardLoading}
+                                    className="text-green-500 hover:text-green-700 p-1 disabled:opacity-50"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M5 13l4 4L19 7"
+                                      />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      cancelEditingCard(
+                                        position as "first" | "second"
+                                      )
+                                    }
+                                    disabled={isCardLoading}
+                                    className="text-red-500 hover:text-red-700 p-1 disabled:opacity-50"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                      />
+                                    </svg>
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    startEditingCard(
+                                      position as "first" | "second"
+                                    )
+                                  }
+                                  className="text-blue-500 hover:text-blue-700 p-1"
+                                >
+                                  <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <p className="text-gray-600 mb-6 text-sm leading-relaxed">
-                          {trait.description}
-                        </p>
-                        <div className="text-gray-700 text-sm leading-relaxed">
-                          {trait.content}
-                        </div>
+                        {isEditing ? (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                부제목
+                              </label>
+                              <input
+                                type="text"
+                                value={
+                                  editCardData[position as "first" | "second"]
+                                    .subTitle
+                                }
+                                onChange={(e) =>
+                                  setEditCardData({
+                                    ...editCardData,
+                                    [position]: {
+                                      ...editCardData[
+                                        position as "first" | "second"
+                                      ],
+                                      subTitle: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                placeholder="부제목을 입력하세요"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                내용
+                              </label>
+                              <textarea
+                                value={
+                                  editCardData[position as "first" | "second"]
+                                    .content
+                                }
+                                onChange={(e) =>
+                                  setEditCardData({
+                                    ...editCardData,
+                                    [position]: {
+                                      ...editCardData[
+                                        position as "first" | "second"
+                                      ],
+                                      content: e.target.value,
+                                    },
+                                  })
+                                }
+                                rows={4}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                placeholder="내용을 입력하세요"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                              {card.subTitle}
+                            </p>
+                            <div className="text-gray-700 text-sm leading-relaxed">
+                              {card.content}
+                            </div>
+                          </>
+                        )}
                       </div>
-                    )
-                  )}
+                    );
+                  })}
                 </div>
               )}
 
               {/* 취미 & 관심사 탭 */}
               {activeTab === "interests" && (
                 <div className="grid md:grid-cols-2 gap-8 justify-items-center">
-                  {Object.entries(interests).map(([category, interest]) => (
-                    <div
-                      key={category}
-                      className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-blue-500 w-full max-w-lg"
-                    >
-                      <div className="flex items-center mb-6">
-                        <div className="mr-3">{interest.icon}</div>
-                        <h3 className="text-xl font-semibold text-gray-800">
-                          {category}
-                        </h3>
+                  {["first", "second"].map((position) => {
+                    const card = getCardData(position as "first" | "second");
+                    const icon = getCardIcon(position as "first" | "second");
+                    const isEditing =
+                      isCardEditing[position as "first" | "second"];
+
+                    return (
+                      <div
+                        key={position}
+                        className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-blue-500 w-full max-w-lg"
+                      >
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center">
+                            <div className="mr-3">{icon}</div>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={
+                                  editCardData[position as "first" | "second"]
+                                    .title
+                                }
+                                onChange={(e) =>
+                                  setEditCardData({
+                                    ...editCardData,
+                                    [position]: {
+                                      ...editCardData[
+                                        position as "first" | "second"
+                                      ],
+                                      title: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="text-xl font-semibold text-gray-800 border-b border-gray-300 focus:border-blue-500 outline-none"
+                                placeholder="제목을 입력하세요"
+                              />
+                            ) : (
+                              <h3 className="text-xl font-semibold text-gray-800">
+                                {card.title}
+                              </h3>
+                            )}
+                          </div>
+                          {canEdit && isEditMode && (
+                            <div className="flex gap-2">
+                              {isEditing ? (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      saveCard(position as "first" | "second")
+                                    }
+                                    disabled={isCardLoading}
+                                    className="text-green-500 hover:text-green-700 p-1 disabled:opacity-50"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M5 13l4 4L19 7"
+                                      />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      cancelEditingCard(
+                                        position as "first" | "second"
+                                      )
+                                    }
+                                    disabled={isCardLoading}
+                                    className="text-red-500 hover:text-red-700 p-1 disabled:opacity-50"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                      />
+                                    </svg>
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    startEditingCard(
+                                      position as "first" | "second"
+                                    )
+                                  }
+                                  className="text-blue-500 hover:text-blue-700 p-1"
+                                >
+                                  <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {isEditing ? (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                부제목
+                              </label>
+                              <input
+                                type="text"
+                                value={
+                                  editCardData[position as "first" | "second"]
+                                    .subTitle
+                                }
+                                onChange={(e) =>
+                                  setEditCardData({
+                                    ...editCardData,
+                                    [position]: {
+                                      ...editCardData[
+                                        position as "first" | "second"
+                                      ],
+                                      subTitle: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                placeholder="부제목을 입력하세요"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                내용
+                              </label>
+                              <textarea
+                                value={
+                                  editCardData[position as "first" | "second"]
+                                    .content
+                                }
+                                onChange={(e) =>
+                                  setEditCardData({
+                                    ...editCardData,
+                                    [position]: {
+                                      ...editCardData[
+                                        position as "first" | "second"
+                                      ],
+                                      content: e.target.value,
+                                    },
+                                  })
+                                }
+                                rows={4}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                placeholder="내용을 입력하세요"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                              {card.subTitle}
+                            </p>
+                            <div className="text-gray-700 text-sm leading-relaxed">
+                              {card.content}
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <p className="text-gray-600 mb-6 text-sm leading-relaxed">
-                        {interest.description}
-                      </p>
-                      <div className="text-gray-700 text-sm leading-relaxed">
-                        {interest.content}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
               {/* 경험 & 성취 탭 */}
               {activeTab === "experience" && (
                 <div className="grid md:grid-cols-2 gap-8 justify-items-center">
-                  {Object.entries(experiences).map(([category, experience]) => (
-                    <div
-                      key={category}
-                      className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-blue-500 w-full max-w-lg"
-                    >
-                      <div className="flex items-center mb-6">
-                        <div className="mr-3">{experience.icon}</div>
-                        <h3 className="text-xl font-semibold text-gray-800">
-                          {category}
-                        </h3>
+                  {["first", "second"].map((position) => {
+                    const card = getCardData(position as "first" | "second");
+                    const icon = getCardIcon(position as "first" | "second");
+                    const isEditing =
+                      isCardEditing[position as "first" | "second"];
+
+                    return (
+                      <div
+                        key={position}
+                        className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-blue-500 w-full max-w-lg"
+                      >
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center">
+                            <div className="mr-3">{icon}</div>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={
+                                  editCardData[position as "first" | "second"]
+                                    .title
+                                }
+                                onChange={(e) =>
+                                  setEditCardData({
+                                    ...editCardData,
+                                    [position]: {
+                                      ...editCardData[
+                                        position as "first" | "second"
+                                      ],
+                                      title: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="text-xl font-semibold text-gray-800 border-b border-gray-300 focus:border-blue-500 outline-none"
+                                placeholder="제목을 입력하세요"
+                              />
+                            ) : (
+                              <h3 className="text-xl font-semibold text-gray-800">
+                                {card.title}
+                              </h3>
+                            )}
+                          </div>
+                          {canEdit && isEditMode && (
+                            <div className="flex gap-2">
+                              {isEditing ? (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      saveCard(position as "first" | "second")
+                                    }
+                                    disabled={isCardLoading}
+                                    className="text-green-500 hover:text-green-700 p-1 disabled:opacity-50"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M5 13l4 4L19 7"
+                                      />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      cancelEditingCard(
+                                        position as "first" | "second"
+                                      )
+                                    }
+                                    disabled={isCardLoading}
+                                    className="text-red-500 hover:text-red-700 p-1 disabled:opacity-50"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                      />
+                                    </svg>
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    startEditingCard(
+                                      position as "first" | "second"
+                                    )
+                                  }
+                                  className="text-blue-500 hover:text-blue-700 p-1"
+                                >
+                                  <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {isEditing ? (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                부제목
+                              </label>
+                              <input
+                                type="text"
+                                value={
+                                  editCardData[position as "first" | "second"]
+                                    .subTitle
+                                }
+                                onChange={(e) =>
+                                  setEditCardData({
+                                    ...editCardData,
+                                    [position]: {
+                                      ...editCardData[
+                                        position as "first" | "second"
+                                      ],
+                                      subTitle: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                placeholder="부제목을 입력하세요"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                내용
+                              </label>
+                              <textarea
+                                value={
+                                  editCardData[position as "first" | "second"]
+                                    .content
+                                }
+                                onChange={(e) =>
+                                  setEditCardData({
+                                    ...editCardData,
+                                    [position]: {
+                                      ...editCardData[
+                                        position as "first" | "second"
+                                      ],
+                                      content: e.target.value,
+                                    },
+                                  })
+                                }
+                                rows={4}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                placeholder="내용을 입력하세요"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                              {card.subTitle}
+                            </p>
+                            <div className="text-gray-700 text-sm leading-relaxed">
+                              {card.content}
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <p className="text-gray-600 mb-6 text-sm leading-relaxed">
-                        {experience.description}
-                      </p>
-                      <div className="text-gray-700 text-sm leading-relaxed">
-                        {experience.content}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
