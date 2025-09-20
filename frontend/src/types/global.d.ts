@@ -80,25 +80,33 @@ interface KakaoMarker {
 interface KakaoPlaces {
   keywordSearch(
     keyword: string,
-    callback: (result: KakaoPlace[], status: string, pagination: KakaoPagination) => void,
+    callback: (
+      result: KakaoPlace[],
+      status: string,
+      pagination: KakaoPagination
+    ) => void,
     options?: {
       category_group_code?: string;
       location?: KakaoLatLng;
       radius?: number;
       bounds?: KakaoLatLngBounds;
-      sort?: 'distance' | 'accuracy';
+      sort?: "distance" | "accuracy";
       page?: number;
       size?: number;
     }
   ): void;
   categorySearch(
     categoryGroupCode: string,
-    callback: (result: KakaoPlace[], status: string, pagination: KakaoPagination) => void,
+    callback: (
+      result: KakaoPlace[],
+      status: string,
+      pagination: KakaoPagination
+    ) => void,
     options?: {
       location?: KakaoLatLng;
       radius?: number;
       bounds?: KakaoLatLngBounds;
-      sort?: 'distance' | 'accuracy';
+      sort?: "distance" | "accuracy";
       page?: number;
       size?: number;
     }
@@ -144,9 +152,12 @@ interface KakaoGeocoderResult {
 interface KakaoGeocoder {
   addressSearch(
     address: string,
-    callback: (result: KakaoGeocoderResult['documents'], status: string) => void,
+    callback: (
+      result: KakaoGeocoderResult["documents"],
+      status: string
+    ) => void,
     options?: {
-      analyze_type?: 'similar' | 'exact';
+      analyze_type?: "similar" | "exact";
       page?: number;
       size?: number;
     }
@@ -154,7 +165,10 @@ interface KakaoGeocoder {
   coord2Address(
     x: number,
     y: number,
-    callback: (result: KakaoGeocoderResult['documents'], status: string) => void,
+    callback: (
+      result: KakaoGeocoderResult["documents"],
+      status: string
+    ) => void,
     options?: {
       input_coord?: string;
     }
@@ -162,17 +176,20 @@ interface KakaoGeocoder {
   coord2RegionCode(
     x: number,
     y: number,
-    callback: (result: Array<{
-      region_type: string;
-      address_name: string;
-      region_1depth_name: string;
-      region_2depth_name: string;
-      region_3depth_name: string;
-      region_4depth_name: string;
-      code: string;
-      x: number;
-      y: number;
-    }>, status: string) => void,
+    callback: (
+      result: Array<{
+        region_type: string;
+        address_name: string;
+        region_1depth_name: string;
+        region_2depth_name: string;
+        region_3depth_name: string;
+        region_4depth_name: string;
+        code: string;
+        x: number;
+        y: number;
+      }>,
+      status: string
+    ) => void,
     options?: {
       input_coord?: string;
       output_coord?: string;
@@ -181,10 +198,13 @@ interface KakaoGeocoder {
   transCoord(
     x: number,
     y: number,
-    callback: (result: Array<{
-      x: number;
-      y: number;
-    }>, status: string) => void,
+    callback: (
+      result: Array<{
+        x: number;
+        y: number;
+      }>,
+      status: string
+    ) => void,
     options: {
       input_coord: string;
       output_coord: string;
@@ -197,19 +217,25 @@ declare global {
     kakao: {
       maps: {
         LatLng: new (lat: number, lng: number) => KakaoLatLng;
-        LatLngBounds: new (sw?: KakaoLatLng, ne?: KakaoLatLng) => KakaoLatLngBounds;
-        Map: new (container: HTMLElement, options: {
-          center: KakaoLatLng;
-          level?: number;
-          mapTypeId?: string;
-          draggable?: boolean;
-          scrollwheel?: boolean;
-          disableDoubleClick?: boolean;
-          disableDoubleClickZoom?: boolean;
-          projectionId?: string;
-          tileAnimation?: boolean;
-          keyboardShortcuts?: boolean | object;
-        }) => KakaoMap;
+        LatLngBounds: new (
+          sw?: KakaoLatLng,
+          ne?: KakaoLatLng
+        ) => KakaoLatLngBounds;
+        Map: new (
+          container: HTMLElement,
+          options: {
+            center: KakaoLatLng;
+            level?: number;
+            mapTypeId?: string;
+            draggable?: boolean;
+            scrollwheel?: boolean;
+            disableDoubleClick?: boolean;
+            disableDoubleClickZoom?: boolean;
+            projectionId?: string;
+            tileAnimation?: boolean;
+            keyboardShortcuts?: boolean | object;
+          }
+        ) => KakaoMap;
         Marker: new (options: {
           map?: KakaoMap;
           position: KakaoLatLng;

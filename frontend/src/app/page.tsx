@@ -291,44 +291,6 @@ export default function RootPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 px-6 bg-gradient-to-r from-sky-600 to-cyan-600">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
-            지금 바로 시작하세요
-          </h2>
-          <p className="text-xl text-sky-100 mb-10 leading-relaxed">
-            무료로 시작해서 언제든지 업그레이드하세요. 14일 무료 체험으로 모든
-            기능을 경험해보세요.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/auth/signup">
-              <Button
-                variant="primary"
-                size="lg"
-                className="bg-white text-sky-600 hover:bg-gray-50 shadow-lg px-8 py-4 text-lg font-semibold"
-              >
-                무료로 시작하기
-              </Button>
-            </Link>
-            <Link href="/auth/login">
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg"
-              >
-                로그인하기
-              </Button>
-            </Link>
-          </div>
-
-          <p className="text-sky-200 text-sm mt-6">
-            신용카드 정보 없이 14일 무료 체험 • 언제든 취소 가능
-          </p>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12 px-6">
         <div className="container mx-auto max-w-6xl">
