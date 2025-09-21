@@ -1,5 +1,6 @@
 package com.port.folio.domain.main.dto;
 
+import com.port.folio.domain.main.entity.WorkHistory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,4 +12,6 @@ public class MainResponse {
     private String smallGreeting;
     private String introduce;
     private String name;
+    private String job;
+    private WorkHistory workHistory;
 }

@@ -26,8 +26,9 @@ public class MainService {
                 main.getGreeting(),
                 main.getSmallGreeting(),
                 main.getIntroduce(),
-                main.getName()
-
+                main.getName(),
+                main.getJob(),
+                main.getWorkHistory()
         );
     }
 
@@ -38,6 +39,8 @@ public class MainService {
         main.setSmallGreeting(req.getSmallGreeting());
         main.setName(req.getName());
         main.setIntroduce(req.getIntroduce());
+        main.setJob(req.getJob());
+        main.setWorkHistory(req.getWorkHistory());
 
         mainRepository.save(main);
         return "수정 완료";

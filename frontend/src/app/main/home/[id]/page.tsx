@@ -12,8 +12,14 @@ import {
   uploadProfileImage,
   getUserProfileImage,
 } from "@/features/upload/service/uploadService";
+import { LocationResponse } from "@/types/location";
+import {
+  getUserLocation,
+  updateUserLocation,
+} from "@/features/main/service/locationService";
 import { mainService } from "@/features/main/service/mainService";
 import { MainResponse } from "@/features/main/type/main";
+import { WorkHistory } from "@/features/main/type/main";
 import Image from "next/image";
 
 // Kakao Maps 장소 검색 결과 타입
@@ -69,6 +75,8 @@ export default function HomePage({ params }: HomePageProps) {
     smallGreeting: "",
     name: "",
     introduce: "",
+    job: "",
+    workHistory: WorkHistory.ZERO,
   });
   const [isSavingMain, setIsSavingMain] = useState(false);
 
@@ -79,17 +87,27 @@ export default function HomePage({ params }: HomePageProps) {
   const [isKakaoMapsLoaded, setIsKakaoMapsLoaded] = useState(false);
 
   // 위치 정보 상태
-  const [currentLocation, setCurrentLocation] = useState({
-    text: "서울, 대한민국",
-    lat: 37.5665,
-    lng: 126.978,
+  const [currentLocation, setCurrentLocation] = useState<LocationResponse>({
+    lat: 0,
+    lng: 0,
+    address: "",
+    email: "",
+    phoneNumber: "",
   });
+  const [locationLoading, setLocationLoading] = useState(true);
 
   // 지도 검색 모달 상태
   const [isMapSearchModalOpen, setIsMapSearchModalOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState<KakaoPlace[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  // 이메일/전화번호 편집 모달 상태
+  const [isEmailEditModalOpen, setIsEmailEditModalOpen] = useState(false);
+  const [isPhoneEditModalOpen, setIsPhoneEditModalOpen] = useState(false);
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhoneNumber, setEditPhoneNumber] = useState("");
+  const [isUpdatingContact, setIsUpdatingContact] = useState(false);
 
   // 카테고리 데이터 가져오기
   useEffect(() => {
@@ -147,6 +165,8 @@ export default function HomePage({ params }: HomePageProps) {
           name: "사용자",
           introduce:
             "새로운 기술을 배우고 적용할 때 신기해 하고 좋아하며, 사용자 경험을 개선하는 데 열정을 가지고 있습니다.",
+          job: "",
+          workHistory: WorkHistory.ZERO,
         });
       } finally {
         setMainDataLoading(false);
@@ -154,6 +174,24 @@ export default function HomePage({ params }: HomePageProps) {
     };
 
     fetchMainData();
+  }, [userId]);
+
+  // 위치 데이터 가져오기
+  useEffect(() => {
+    const fetchLocationData = async () => {
+      try {
+        setLocationLoading(true);
+        const locationData = await getUserLocation(parseInt(userId));
+        setCurrentLocation(locationData);
+      } catch (error) {
+        console.error("위치 데이터 조회 실패:", error);
+        // 에러 시 기본값 유지
+      } finally {
+        setLocationLoading(false);
+      }
+    };
+
+    fetchLocationData();
   }, [userId]);
 
   // Kakao Maps SDK 로드 확인
@@ -173,14 +211,24 @@ export default function HomePage({ params }: HomePageProps) {
   // 모달 ESC 키 핸들러
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isMapSearchModalOpen) {
-        setIsMapSearchModalOpen(false);
-        setSearchKeyword("");
-        setSearchResults([]);
+      if (e.key === "Escape") {
+        if (isMapSearchModalOpen) {
+          setIsMapSearchModalOpen(false);
+          setSearchKeyword("");
+          setSearchResults([]);
+        }
+        if (isEmailEditModalOpen) {
+          setIsEmailEditModalOpen(false);
+          setEditEmail("");
+        }
+        if (isPhoneEditModalOpen) {
+          setIsPhoneEditModalOpen(false);
+          setEditPhoneNumber("");
+        }
       }
     };
 
-    if (isMapSearchModalOpen) {
+    if (isMapSearchModalOpen || isEmailEditModalOpen || isPhoneEditModalOpen) {
       document.addEventListener("keydown", handleEscape);
       document.body.style.overflow = "hidden"; // 스크롤 막기
     }
@@ -189,7 +237,7 @@ export default function HomePage({ params }: HomePageProps) {
       document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = "unset"; // 스크롤 복원
     };
-  }, [isMapSearchModalOpen]);
+  }, [isMapSearchModalOpen, isEmailEditModalOpen, isPhoneEditModalOpen]);
 
   // 지도 검색 함수
   const searchPlaces = async (keyword: string) => {
@@ -229,15 +277,82 @@ export default function HomePage({ params }: HomePageProps) {
   };
 
   // 검색 결과 선택 함수
-  const selectPlace = (place: KakaoPlace) => {
-    setCurrentLocation({
-      text: place.place_name,
-      lat: parseFloat(place.y),
-      lng: parseFloat(place.x),
-    });
-    setIsMapSearchModalOpen(false);
-    setSearchKeyword("");
-    setSearchResults([]);
+  const selectPlace = async (place: KakaoPlace) => {
+    if (!canEdit) return;
+
+    try {
+      const locationData = {
+        lat: parseFloat(place.y),
+        lng: parseFloat(place.x),
+        address: place.place_name,
+        email: currentLocation.email || "",
+        phoneNumber: currentLocation.phoneNumber || "",
+      };
+
+      // API 호출로 위치 저장
+      await updateUserLocation(parseInt(userId), locationData);
+
+      // 로컬 상태 업데이트
+      setCurrentLocation(locationData);
+      setIsMapSearchModalOpen(false);
+      setSearchKeyword("");
+      setSearchResults([]);
+    } catch (error) {
+      console.error("위치 저장 실패:", error);
+      alert("위치 저장에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
+
+  // 이메일 업데이트 함수
+  const updateEmail = async () => {
+    if (!canEdit || !editEmail.trim()) return;
+
+    try {
+      setIsUpdatingContact(true);
+      const locationData = {
+        lat: currentLocation.lat,
+        lng: currentLocation.lng,
+        address: currentLocation.address,
+        email: editEmail.trim(),
+        phoneNumber: currentLocation.phoneNumber || "",
+      };
+
+      await updateUserLocation(parseInt(userId), locationData);
+      setCurrentLocation(locationData);
+      setIsEmailEditModalOpen(false);
+      setEditEmail("");
+    } catch (error) {
+      console.error("이메일 업데이트 실패:", error);
+      alert("이메일 업데이트에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsUpdatingContact(false);
+    }
+  };
+
+  // 전화번호 업데이트 함수
+  const updatePhoneNumber = async () => {
+    if (!canEdit || !editPhoneNumber.trim()) return;
+
+    try {
+      setIsUpdatingContact(true);
+      const locationData = {
+        lat: currentLocation.lat,
+        lng: currentLocation.lng,
+        address: currentLocation.address,
+        email: currentLocation.email || "",
+        phoneNumber: editPhoneNumber.trim(),
+      };
+
+      await updateUserLocation(parseInt(userId), locationData);
+      setCurrentLocation(locationData);
+      setIsPhoneEditModalOpen(false);
+      setEditPhoneNumber("");
+    } catch (error) {
+      console.error("전화번호 업데이트 실패:", error);
+      alert("전화번호 업데이트에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsUpdatingContact(false);
+    }
   };
 
   // 검색 디바운싱을 위한 ref
@@ -388,6 +503,8 @@ export default function HomePage({ params }: HomePageProps) {
           smallGreeting: mainData.smallGreeting,
           name: mainData.name,
           introduce: mainData.introduce,
+          job: mainData.job || "",
+          workHistory: mainData.workHistory || WorkHistory.ZERO,
         });
         setIsEditingMain(true);
       }
@@ -400,6 +517,8 @@ export default function HomePage({ params }: HomePageProps) {
         smallGreeting: "",
         name: "",
         introduce: "",
+        job: "",
+        workHistory: WorkHistory.ZERO,
       });
     }
   };
@@ -408,7 +527,7 @@ export default function HomePage({ params }: HomePageProps) {
     <main className="min-h-screen bg-white">
       {/* Navigation Bar */}
       <nav className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md shadow-lg border-b border-gray-100 z-50">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-22 py-4">
           <div className="flex justify-between items-center">
             <Link
               href={`/main/home/${userId}`}
@@ -429,7 +548,13 @@ export default function HomePage({ params }: HomePageProps) {
             </Link>
 
             <div className="flex items-center space-x-6">
-              {isLoggedIn ? (
+              {isLoading ? (
+                // 인증 확인 중
+                <div className="flex items-center space-x-4">
+                  <div className="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
+                  <div className="animate-pulse bg-gray-200 h-8 w-20 rounded"></div>
+                </div>
+              ) : isLoggedIn ? (
                 <>
                   <div className="hidden md:flex items-center space-x-4">
                     <span className="text-gray-700 font-medium">
@@ -704,6 +829,50 @@ export default function HomePage({ params }: HomePageProps) {
                   </div>
                   <div className="space-y-4">
                     <label className="block text-lg font-semibold text-gray-800">
+                      직무
+                    </label>
+                    <input
+                      type="text"
+                      value={editMainData.job}
+                      onChange={(e) =>
+                        setEditMainData({
+                          ...editMainData,
+                          job: e.target.value,
+                        })
+                      }
+                      className="w-full px-6 py-4 bg-white border-2 border-gray-200 rounded-xl text-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-300 shadow-sm"
+                      placeholder="직무를 입력하세요 (예: 프론트엔드 개발자)"
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <label className="block text-lg font-semibold text-gray-800">
+                      경력
+                    </label>
+                    <select
+                      value={editMainData.workHistory}
+                      onChange={(e) =>
+                        setEditMainData({
+                          ...editMainData,
+                          workHistory: e.target.value as WorkHistory,
+                        })
+                      }
+                      className="w-full px-6 py-4 bg-white border-2 border-gray-200 rounded-xl text-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-300 shadow-sm"
+                    >
+                      <option value={WorkHistory.ZERO}>신입 (0년)</option>
+                      <option value={WorkHistory.ONE}>1년</option>
+                      <option value={WorkHistory.TWO}>2년</option>
+                      <option value={WorkHistory.THREE}>3년</option>
+                      <option value={WorkHistory.FOUR}>4년</option>
+                      <option value={WorkHistory.FIVE}>5년</option>
+                      <option value={WorkHistory.SIX}>6년</option>
+                      <option value={WorkHistory.SEVEN}>7년</option>
+                      <option value={WorkHistory.EIGHT}>8년</option>
+                      <option value={WorkHistory.NINE}>9년</option>
+                      <option value={WorkHistory.TEN}>10년 이상</option>
+                    </select>
+                  </div>
+                  <div className="space-y-4">
+                    <label className="block text-lg font-semibold text-gray-800">
                       소개글
                     </label>
                     <textarea
@@ -748,7 +917,7 @@ export default function HomePage({ params }: HomePageProps) {
                           직무
                         </span>
                         <span className="text-sky-600 text-sm bg-sky-200 px-3 py-1 rounded-full whitespace-nowrap">
-                          정보 없음
+                          {mainData?.job || "정보 없음"}
                         </span>
                       </div>
 
@@ -770,7 +939,36 @@ export default function HomePage({ params }: HomePageProps) {
                           경력
                         </span>
                         <span className="text-cyan-600 text-sm bg-cyan-200 px-3 py-1 rounded-full whitespace-nowrap">
-                          정보 없음
+                          {mainData?.workHistory
+                            ? (() => {
+                                switch (mainData.workHistory) {
+                                  case WorkHistory.ZERO:
+                                    return "신입 (0년)";
+                                  case WorkHistory.ONE:
+                                    return "1년";
+                                  case WorkHistory.TWO:
+                                    return "2년";
+                                  case WorkHistory.THREE:
+                                    return "3년";
+                                  case WorkHistory.FOUR:
+                                    return "4년";
+                                  case WorkHistory.FIVE:
+                                    return "5년";
+                                  case WorkHistory.SIX:
+                                    return "6년";
+                                  case WorkHistory.SEVEN:
+                                    return "7년";
+                                  case WorkHistory.EIGHT:
+                                    return "8년";
+                                  case WorkHistory.NINE:
+                                    return "9년";
+                                  case WorkHistory.TEN:
+                                    return "10년 이상";
+                                  default:
+                                    return "정보 없음";
+                                }
+                              })()
+                            : "정보 없음"}
                         </span>
                       </div>
                     </div>
@@ -1139,9 +1337,25 @@ export default function HomePage({ params }: HomePageProps) {
 
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-sky-400 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div
+                className={`w-16 h-16 bg-gradient-to-br from-sky-400 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6 relative group ${
+                  isGlobalEditMode ? "cursor-pointer" : ""
+                }`}
+                onClick={
+                  isGlobalEditMode
+                    ? () => {
+                        setEditEmail(currentLocation.email || "");
+                        setIsEmailEditModalOpen(true);
+                      }
+                    : undefined
+                }
+              >
                 <svg
-                  className="w-8 h-8 text-white"
+                  className={`w-8 h-8 text-white ${
+                    isGlobalEditMode
+                      ? "group-hover:scale-110 transition-transform duration-300"
+                      : ""
+                  }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1153,15 +1367,41 @@ export default function HomePage({ params }: HomePageProps) {
                     d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                   />
                 </svg>
+                {/* 클릭 힌트 */}
+                {isGlobalEditMode && (
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-sky-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <svg
+                      className="w-3 h-3 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                      />
+                    </svg>
+                  </div>
+                )}
               </div>
               <h3 className="text-xl font-bold mb-4">이메일</h3>
               <p className="text-gray-300 mb-4">프로젝트 문의 및 협업 제안</p>
               <div className="text-center">
                 <a
-                  href="mailto:contact@example.com"
-                  className="text-sky-400 hover:text-sky-300 font-medium text-lg transition-colors duration-300"
+                  href={
+                    currentLocation.email
+                      ? `mailto:${currentLocation.email}`
+                      : undefined
+                  }
+                  className={`font-medium text-lg transition-colors duration-300 ${
+                    currentLocation.email
+                      ? "text-sky-400 hover:text-sky-300"
+                      : "text-gray-400 cursor-default"
+                  }`}
                 >
-                  contact@example.com
+                  {currentLocation.email || "이메일 정보가 없습니다"}
                 </a>
                 {isGlobalEditMode && (
                   <p className="text-gray-400 text-sm mt-2">
@@ -1172,9 +1412,25 @@ export default function HomePage({ params }: HomePageProps) {
             </div>
 
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-cyan-400 to-sky-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div
+                className={`w-16 h-16 bg-gradient-to-br from-cyan-400 to-sky-500 rounded-2xl flex items-center justify-center mx-auto mb-6 relative group ${
+                  isGlobalEditMode ? "cursor-pointer" : ""
+                }`}
+                onClick={
+                  isGlobalEditMode
+                    ? () => {
+                        setEditPhoneNumber(currentLocation.phoneNumber || "");
+                        setIsPhoneEditModalOpen(true);
+                      }
+                    : undefined
+                }
+              >
                 <svg
-                  className="w-8 h-8 text-white"
+                  className={`w-8 h-8 text-white ${
+                    isGlobalEditMode
+                      ? "group-hover:scale-110 transition-transform duration-300"
+                      : ""
+                  }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1186,15 +1442,41 @@ export default function HomePage({ params }: HomePageProps) {
                     d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                   />
                 </svg>
+                {/* 클릭 힌트 */}
+                {isGlobalEditMode && (
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <svg
+                      className="w-3 h-3 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                      />
+                    </svg>
+                  </div>
+                )}
               </div>
               <h3 className="text-xl font-bold mb-4">전화번호</h3>
               <p className="text-gray-300 mb-4">직접 연락 및 긴급 문의</p>
               <div className="text-center">
                 <a
-                  href="tel:+82-10-1234-5678"
-                  className="text-cyan-400 hover:text-cyan-300 font-medium text-lg transition-colors duration-300"
+                  href={
+                    currentLocation.phoneNumber
+                      ? `tel:${currentLocation.phoneNumber}`
+                      : undefined
+                  }
+                  className={`font-medium text-lg transition-colors duration-300 ${
+                    currentLocation.phoneNumber
+                      ? "text-cyan-400 hover:text-cyan-300"
+                      : "text-gray-400 cursor-default"
+                  }`}
                 >
-                  +82 10-1234-5678
+                  {currentLocation.phoneNumber || "전화번호 정보가 없습니다"}
                 </a>
                 {isGlobalEditMode && (
                   <p className="text-gray-400 text-sm mt-2">
@@ -1261,7 +1543,11 @@ export default function HomePage({ params }: HomePageProps) {
               <p className="text-gray-300 mb-4">근무 및 협업 가능 지역</p>
               <div className="text-center">
                 <span className="text-sky-400 font-medium text-lg">
-                  {currentLocation.text}
+                  {locationLoading
+                    ? "위치 정보를 불러오는 중..."
+                    : currentLocation.address
+                    ? currentLocation.address
+                    : "위치 정보가 없습니다"}
                 </span>
                 {isGlobalEditMode && (
                   <p className="text-gray-400 text-sm mt-2">
@@ -1282,6 +1568,212 @@ export default function HomePage({ params }: HomePageProps) {
           </div>
         </div>
       </section>
+
+      {/* 이메일 편집 모달 */}
+      {isEmailEditModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            {/* 모달 헤더 */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-900">이메일 변경</h3>
+                <button
+                  onClick={() => {
+                    setIsEmailEditModalOpen(false);
+                    setEditEmail("");
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-gray-600 text-sm mt-1">
+                연락 가능한 이메일 주소를 입력하세요
+              </p>
+            </div>
+
+            {/* 입력 폼 */}
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    이메일 주소
+                  </label>
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    placeholder="example@email.com"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-300"
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        updateEmail();
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex gap-4">
+                  <button
+                    onClick={updateEmail}
+                    disabled={isUpdatingContact || !editEmail.trim()}
+                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-cyan-500 text-white font-semibold rounded-xl hover:from-sky-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                  >
+                    {isUpdatingContact ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                        저장 중...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        저장하기
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEmailEditModalOpen(false);
+                      setEditEmail("");
+                    }}
+                    disabled={isUpdatingContact}
+                    className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 disabled:opacity-50 transition-all duration-300"
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 전화번호 편집 모달 */}
+      {isPhoneEditModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            {/* 모달 헤더 */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-900">
+                  전화번호 변경
+                </h3>
+                <button
+                  onClick={() => {
+                    setIsPhoneEditModalOpen(false);
+                    setEditPhoneNumber("");
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-gray-600 text-sm mt-1">
+                연락 가능한 전화번호를 입력하세요
+              </p>
+            </div>
+
+            {/* 입력 폼 */}
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    전화번호
+                  </label>
+                  <input
+                    type="tel"
+                    value={editPhoneNumber}
+                    onChange={(e) => setEditPhoneNumber(e.target.value)}
+                    placeholder="010-1234-5678"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-300"
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        updatePhoneNumber();
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex gap-4">
+                  <button
+                    onClick={updatePhoneNumber}
+                    disabled={isUpdatingContact || !editPhoneNumber.trim()}
+                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-sky-500 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                  >
+                    {isUpdatingContact ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                        저장 중...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        저장하기
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsPhoneEditModalOpen(false);
+                      setEditPhoneNumber("");
+                    }}
+                    disabled={isUpdatingContact}
+                    className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 disabled:opacity-50 transition-all duration-300"
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 지도 검색 모달 */}
       {isMapSearchModalOpen && (

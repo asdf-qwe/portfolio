@@ -101,7 +101,7 @@ export default function ProjectHeader() {
     <>
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <nav className="container mx-auto max-w-6xl px-6">
-          <div className="flex items-center space-x-8 py-6">
+          <div className="flex items-center space-x-8 py-4">
             {/* 홈 아이콘 */}
             <Link
               href={(() => {

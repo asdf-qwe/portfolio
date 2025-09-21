@@ -20,6 +20,8 @@ public class Main extends BaseEntity {
     private String smallGreeting;
     private String introduce;
     private String name;
+    private String job;
+    private WorkHistory workHistory;
 
     @OneToOne
     private User user;

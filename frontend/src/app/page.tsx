@@ -35,7 +35,7 @@ export default function RootPage() {
     <main className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-sky-50">
       {/* Navigation Bar */}
       <nav className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="container mx-auto px-22 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-sky-600 to-cyan-600 rounded-lg flex items-center justify-center">
               <svg

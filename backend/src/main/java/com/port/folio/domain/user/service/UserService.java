@@ -1,10 +1,9 @@
 package com.port.folio.domain.user.service;
 
-import com.port.folio.domain.main.entity.CategoryName;
-import com.port.folio.domain.main.entity.Main;
-import com.port.folio.domain.main.entity.SkillCategory;
+import com.port.folio.domain.main.entity.*;
 import com.port.folio.domain.main.repository.MainRepository;
 import com.port.folio.domain.main.repository.SkillCategoryRepository;
+import com.port.folio.domain.main.repository.UserLocationRepository;
 import com.port.folio.domain.user.dto.SignupRequestDto;
 import com.port.folio.domain.user.entity.User;
 import com.port.folio.domain.user.entity.UserRole;
@@ -22,6 +21,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final MainRepository mainRepository;
     private final SkillCategoryRepository skillCategoryRepository;
+    private final UserLocationRepository userLocationRepository;
     /**
      * 회원가입
      */
@@ -51,6 +51,8 @@ public class UserService {
                 .smallGreeting("간략한 자기소개 입니다.")
                 .name("이름")
                 .introduce("자기소개 입니다.")
+                .job("직종")
+                .workHistory(WorkHistory.ZERO)
                 .user(user)
                 .build();
 
@@ -62,6 +64,17 @@ public class UserService {
                 .build();
 
         skillCategoryRepository.save(skillCategory);
+
+        UserLocation userLocation = UserLocation.builder()
+                .userId(user.getId())
+                .lat(37.5665)
+                .lng(126.978)
+                .address("서울, 대한민국")
+                .email("contact@example.com")
+                .phoneNumber("+82 10-1234-5678")
+                .build();
+
+        userLocationRepository.save(userLocation);
 
         return user;
     }
