@@ -1,5 +1,6 @@
 package com.port.folio.domain.user.service;
 
+import com.port.folio.domain.category.repository.CategoryRepository;
 import com.port.folio.domain.main.entity.*;
 import com.port.folio.domain.main.repository.MainRepository;
 import com.port.folio.domain.main.repository.SkillCategoryRepository;
@@ -22,6 +23,8 @@ public class UserService {
     private final MainRepository mainRepository;
     private final SkillCategoryRepository skillCategoryRepository;
     private final UserLocationRepository userLocationRepository;
+    private final CategoryRepository categoryRepository;
+
     /**
      * 회원가입
      */
@@ -89,5 +92,15 @@ public class UserService {
     public User findById(Long id) {
         return userRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new IllegalArgumentException("관계에 해당하는 유저 없음"));
+    }
+
+    public void deleteUser(Long userId){
+
+
+        skillCategoryRepository.deleteByUserId(userId);
+        mainRepository.deleteByUserId(userId);
+        categoryRepository.deleteByUserId(userId);
+        userLocationRepository.deleteByUserId(userId);
+
     }
 }

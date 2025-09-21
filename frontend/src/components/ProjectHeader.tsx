@@ -86,7 +86,7 @@ export default function ProjectHeader() {
       setNewCategoryTitle("");
 
       // 새로 생성된 카테고리 페이지로 이동
-      router.push(`/main/home/${user.id}/category/${newCategory.id}`);
+      router.push(`/pof-2/${user.id}/${newCategory.id}`);
 
       alert(`"${newCategory.categoryTitle}" 카테고리가 생성되었습니다!`);
     } catch (error) {
@@ -107,7 +107,7 @@ export default function ProjectHeader() {
               href={(() => {
                 const userIdFromPath = getUserIdFromPath();
                 const targetUserId = userIdFromPath || user?.id;
-                return targetUserId ? `/main/home/${targetUserId}` : "/";
+                return targetUserId ? `/pof-1/${targetUserId}` : "/";
               })()}
               className="text-blue-400 hover:text-blue-500 transition-colors p-2 rounded-lg hover:bg-blue-50"
               aria-label="홈으로 이동"
@@ -147,7 +147,7 @@ export default function ProjectHeader() {
                   const userIdFromPath = getUserIdFromPath();
                   const targetUserId = userIdFromPath || user?.id;
                   const categoryPath = targetUserId
-                    ? `/main/home/${targetUserId}/category/${category.id}`
+                    ? `/pof-2/${targetUserId}/${category.id}`
                     : `/main/category/${category.id}`;
                   return (
                     <li key={category.id} className="relative">

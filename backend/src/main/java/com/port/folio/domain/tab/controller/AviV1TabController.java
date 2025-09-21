@@ -42,4 +42,5 @@ public class AviV1TabController {
         String message = tabService.updateBasicContent(req, categoryId);
         return ResponseEntity.ok(message);
     }
+
 }

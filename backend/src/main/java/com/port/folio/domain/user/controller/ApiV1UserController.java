@@ -141,4 +141,10 @@ public class ApiV1UserController {
                     .body("서버 에러 발생: " + e.getMessage());
         }
     }
+
+    @DeleteMapping
+    public ResponseEntity<String> deleteUser(@RequestParam Long userId){
+        userService.deleteUser(userId);
+        return ResponseEntity.ok("탈퇴 완료");
+    }
 }

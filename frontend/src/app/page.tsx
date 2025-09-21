@@ -14,7 +14,7 @@ export default function RootPage() {
   useEffect(() => {
     // 로그인된 상태이고 유저 정보가 있으면 해당 유저의 홈페이지로 리다이렉트
     if (isLoggedIn && user?.id) {
-      router.push(`/main/home/${user.id}`);
+      router.push(`/pof-1/${user.id}`);
     }
   }, [isLoggedIn, user, router]);
 

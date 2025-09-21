@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MainRepository extends JpaRepository<Main, Long> {
     Main findByUserId(Long userId);
+    void deleteByUserId(Long userId);
 }

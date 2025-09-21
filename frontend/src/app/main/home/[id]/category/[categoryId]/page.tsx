@@ -698,7 +698,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
             </h1>
             <p className="text-gray-600 mb-8">{error}</p>
             <button
-              onClick={() => router.push(`/main/home/${userId}`)}
+              onClick={() => router.push(`/pof-1/${userId}`)}
               className={`px-6 py-2 ${CONSTANTS.COLORS.BLUE} text-white rounded-lg`}
             >
               홈으로 돌아가기
@@ -727,7 +727,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     try {
       await categoryService.deleteCategory(parseInt(categoryId));
       alert("카테고리가 성공적으로 삭제되었습니다.");
-      router.push(`/main/home/${userId}`);
+      router.push(`/pof-1/${userId}`);
     } catch (error) {
       console.error("카테고리 삭제 실패:", error);
       alert("카테고리 삭제에 실패했습니다. 다시 시도해주세요.");

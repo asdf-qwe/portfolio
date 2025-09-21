@@ -3,10 +3,7 @@ package com.port.folio.domain.tab.entity;
 import com.port.folio.domain.category.entity.Category;
 import com.port.folio.domain.post.entity.Post;
 import com.port.folio.global.Jpa.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,6 +22,6 @@ public class Tab extends BaseEntity {
     @ManyToOne
     private Category category;
 
-    @OneToOne(mappedBy = "tab")  // ✅ 연관관계 매핑 필요
+    @OneToOne(mappedBy = "tab",cascade = CascadeType.REMOVE)  // ✅ 연관관계 매핑 필요
     private Post post;
 }

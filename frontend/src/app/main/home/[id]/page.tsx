@@ -530,7 +530,7 @@ export default function HomePage({ params }: HomePageProps) {
         <div className="container mx-auto px-22 py-4">
           <div className="flex justify-between items-center">
             <Link
-              href={`/main/home/${userId}`}
+              href={`/pof-1/${userId}`}
               className="flex items-center space-x-2"
             >
               <div className="w-8 h-8 bg-gradient-to-r from-sky-600 to-cyan-600 rounded-lg flex items-center justify-center">
@@ -1105,7 +1105,7 @@ export default function HomePage({ params }: HomePageProps) {
               // 카테고리가 있을 때
               categories.map((category, index) => (
                 <Link
-                  href={`/main/home/${userId}/category/${category.id}`}
+                  href={`/pof-2/${userId}/${category.id}`}
                   key={category.id}
                   className="group block"
                 >

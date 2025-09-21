@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SkillCategoryRepository extends JpaRepository<SkillCategory,Long> {
     SkillCategory findByUserId(Long userId);
+    void deleteByUserId(Long userId);
 }

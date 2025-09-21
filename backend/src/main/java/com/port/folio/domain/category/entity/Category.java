@@ -33,11 +33,11 @@ public class Category extends BaseEntity {
     @OneToMany(mappedBy = "category",cascade = CascadeType.REMOVE)
     private List<Tab> tabs;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, mappedBy = "category", cascade = CascadeType.REMOVE)
     @JoinColumn(name = "main_video_id")
     private File mainVideo;
 
-    @OneToOne
+    @OneToOne(mappedBy = "category",cascade = CascadeType.REMOVE)
     private BasicTab basicTab;
 
     @OneToOne(mappedBy = "category",cascade = CascadeType.REMOVE)
