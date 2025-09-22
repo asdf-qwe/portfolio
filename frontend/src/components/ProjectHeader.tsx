@@ -22,8 +22,19 @@ export default function ProjectHeader() {
 
   // URL에서 사용자 ID 추출
   const getUserIdFromPath = useCallback((): number | null => {
-    const match = pathname.match(/\/main\/home\/(\d+)/);
-    return match ? parseInt(match[1]) : null;
+    // /main/home/[id] 패턴
+    const mainHomeMatch = pathname.match(/\/main\/home\/(\d+)/);
+    if (mainHomeMatch) {
+      return parseInt(mainHomeMatch[1]);
+    }
+
+    // /pof-2/[id]/[categoryId] 패턴
+    const pof2Match = pathname.match(/\/pof-2\/(\d+)\/\d+/);
+    if (pof2Match) {
+      return parseInt(pof2Match[1]);
+    }
+
+    return null;
   }, [pathname]);
 
   // 카테고리 목록 가져오기

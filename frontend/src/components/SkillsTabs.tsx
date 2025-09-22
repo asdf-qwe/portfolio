@@ -159,7 +159,7 @@ export default function SkillsTabs({
   // 카드 데이터 조회
   useEffect(() => {
     const fetchCardData = async () => {
-      if (!userId) return;
+      if (!userId || isLoading) return; // 로딩 중이거나 userId가 없으면 조회하지 않음
 
       try {
         setIsCardLoading(true);
@@ -204,7 +204,7 @@ export default function SkillsTabs({
     };
 
     fetchCardData();
-  }, [userId, activeTab]); // activeTab도 의존성에 추가하여 탭 변경 시 재조회
+  }, [userId, activeTab, isLoading]); // isLoading도 의존성에 추가
 
   // 카테고리 변경 함수
   const handleCategoryChange = async (newTabKey: string) => {
