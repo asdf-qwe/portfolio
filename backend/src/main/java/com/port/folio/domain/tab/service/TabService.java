@@ -15,19 +15,21 @@ import com.port.folio.domain.tab.repository.BasicTabRepository;
 import com.port.folio.domain.tab.repository.TabRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class TabService {
     private final TabRepository tabRepository;
     private final CategoryRepository categoryRepository;
     private final PostRepository postRepository;
     private final BasicTabRepository basicTabRepository;
 
-    public Tab createTab(CreateTabReq req, Long categoryId) {
+    public void createTab(CreateTabReq req, Long categoryId) {
 
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("카테고리를 찾을 수 없습니다"));
@@ -38,25 +40,9 @@ public class TabService {
                 .category(category)
                 .build();
 
-        // 2. Post 생성 + 연관관계 설정
-        Post post = Post.builder()
-                .title(null)
-                .content(null)
-                .imageUrl(null)
-                .tab(tab)   // Post → Tab
-                .build();
-
-        tab.setPost(post); // Tab → Post
-
-        // 3. 저장 (Cascade 설정 여부에 따라 다름)
-        // Case 1: Tab 엔티티에 cascade = CascadeType.ALL 걸려있으면
-        // return tabRepository.save(tab);
-
-        // Case 2: Cascade 없으면 둘 다 저장
         tabRepository.save(tab);
-        postRepository.save(post);
 
-        return tab;
+
     }
 
     public List<TabRes> getTabs(Long categoryId){

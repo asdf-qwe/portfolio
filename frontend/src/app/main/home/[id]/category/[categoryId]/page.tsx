@@ -367,7 +367,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     const existingPost = tabPosts[parseInt(tabId)];
     if (
       existingPost &&
-      (existingPost.title.trim() || existingPost.content.trim())
+      ((existingPost.title && existingPost.title.trim()) ||
+        (existingPost.content && existingPost.content.trim()))
     ) {
       // 기존 내용이 있으면 로드
       setPostTitle(existingPost.title || "");
@@ -428,7 +429,10 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const renderTabPostContent = (tab: TabRes) => {
     const tabId = tab.id.toString();
     const post = tabPosts[tab.id];
-    const hasContent = post && (post.title.trim() || post.content.trim());
+    const hasContent =
+      post &&
+      ((post.title && post.title.trim()) ||
+        (post.content && post.content.trim()));
 
     if (editingTab === tabId) {
       return (
@@ -489,7 +493,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         <div className="max-w-2xl mx-auto text-left">
           <div className="flex justify-between items-start mb-4">
             <h3 className="text-xl font-semibold text-gray-900">
-              {post.title || `${tab.tabName} 내용`}
+              {post?.title || `${tab.tabName} 내용`}
             </h3>
             {canEdit && (
               <button
@@ -503,11 +507,11 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
           <div className="prose max-w-none">
             <pre className="whitespace-pre-wrap text-gray-700">
-              {post.content || "내용이 없습니다."}
+              {post?.content || "내용이 없습니다."}
             </pre>
           </div>
 
-          {post.createdAt && (
+          {post?.createdAt && (
             <p className="text-sm text-gray-500 mt-4">
               작성일: {new Date(post.createdAt).toLocaleDateString()}
             </p>

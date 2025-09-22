@@ -91,11 +91,14 @@ public class PostService {
         introduceRepository.save(introduce);
     }
 
-    public IntroduceResponse getIntro(Long categoryId){
+    public IntroduceResponse getIntro(Long categoryId) {
         Introduce introduce = introduceRepository.findByCategoryId(categoryId);
-
-        return new IntroduceResponse(introduce.getTitle(),introduce.getContent());
+        if (introduce == null) {
+            return new IntroduceResponse(null, null); // or throw new IllegalArgumentException("...")
+        }
+        return new IntroduceResponse(introduce.getTitle(), introduce.getContent());
     }
+
 
     public void updateIntro(CreateIntroduce req, Long categoryId){
         Introduce introduce = introduceRepository.findByCategoryId(categoryId);

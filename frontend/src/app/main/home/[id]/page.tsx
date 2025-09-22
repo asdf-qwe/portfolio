@@ -53,16 +53,35 @@ export default function HomePage({ params }: HomePageProps) {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
+  // 페이징 관련 상태
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 3;
+
+  // 카테고리 생성 관련 상태
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newCategoryTitle, setNewCategoryTitle] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
   // 프로필 이미지 상태 관리
   const [profileImageUrl, setProfileImageUrl] =
     useState<string>("/다운로드.jpeg"); // 기본 이미지
   const [isUploadingProfile, setIsUploadingProfile] = useState(false);
   const [profileImageLoading, setProfileImageLoading] = useState(true);
 
-  // 카테고리 생성 관련 상태
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
-  const [newCategoryTitle, setNewCategoryTitle] = useState("");
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  // 페이징 계산
+  const totalPages = Math.ceil(categories.length / itemsPerPage);
+  const startIndex = currentPage * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentCategories = categories.slice(startIndex, endIndex);
+
+  // 페이지 이동 함수
+  const goToPreviousPage = () => {
+    setCurrentPage((prev) => Math.max(0, prev - 1));
+  };
+
+  const goToNextPage = () => {
+    setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+  };
 
   // 메인 데이터 상태 관리
   const [mainData, setMainData] = useState<MainResponse | null>(null);
@@ -1103,7 +1122,7 @@ export default function HomePage({ params }: HomePageProps) {
               ))
             ) : categories.length > 0 ? (
               // 카테고리가 있을 때
-              categories.map((category, index) => (
+              currentCategories.map((category, index) => (
                 <Link
                   href={`/pof-2/${userId}/${category.id}`}
                   key={category.id}
@@ -1129,7 +1148,7 @@ export default function HomePage({ params }: HomePageProps) {
                             </svg>
                           </div>
                           <p className="text-sm font-medium opacity-90">
-                            프로젝트 #{index + 1}
+                            프로젝트 #{currentPage * itemsPerPage + index + 1}
                           </p>
                         </div>
                       </div>
@@ -1312,6 +1331,57 @@ export default function HomePage({ params }: HomePageProps) {
               </div>
             )}
           </div>
+
+          {/* 페이징 컨트롤 */}
+          {categories.length > itemsPerPage && (
+            <div className="flex items-center justify-center gap-4 mt-8">
+              <button
+                onClick={goToPreviousPage}
+                disabled={currentPage === 0}
+                className="flex items-center justify-center w-10 h-10 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200 transition-all duration-200"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+
+              <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-md">
+                <span className="text-sm text-gray-700 font-medium">
+                  {currentPage + 1} / {totalPages}
+                </span>
+              </div>
+
+              <button
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages - 1}
+                className="flex items-center justify-center w-10 h-10 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200 transition-all duration-200"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </section>
 

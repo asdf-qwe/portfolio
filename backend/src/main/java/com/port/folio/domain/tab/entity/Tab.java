@@ -22,6 +22,6 @@ public class Tab extends BaseEntity {
     @ManyToOne
     private Category category;
 
-    @OneToOne(mappedBy = "tab",cascade = CascadeType.REMOVE)  // ✅ 연관관계 매핑 필요
+    @OneToOne(mappedBy = "tab",cascade = CascadeType.ALL)  // ✅ 연관관계 매핑 필요
     private Post post;
 }

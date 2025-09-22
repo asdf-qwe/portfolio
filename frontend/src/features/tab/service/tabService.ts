@@ -10,9 +10,9 @@ export class TabService {
    * 새 탭 생성
    * @param tabData 생성할 탭 데이터
    * @param categoryId 카테고리 ID
-   * @returns Promise<unknown> - 백엔드에서 Tab 엔티티를 반환
+   * @returns Promise<string> - 서버에서 반환하는 성공 메시지
    */
-  async createTab(tabData: CreateTabReq, categoryId: number): Promise<unknown> {
+  async createTab(tabData: CreateTabReq, categoryId: number): Promise<string> {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/v1/tab?categoryId=${categoryId}`,
@@ -32,7 +32,7 @@ export class TabService {
         );
       }
 
-      const result = await response.json();
+      const result = await response.text();
       return result;
     } catch (error) {
       console.error("탭 생성 중 오류 발생:", error);

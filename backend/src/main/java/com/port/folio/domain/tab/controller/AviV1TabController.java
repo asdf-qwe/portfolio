@@ -18,10 +18,10 @@ import java.util.List;
 public class AviV1TabController {
         private final TabService tabService;
     @PostMapping
-    public ResponseEntity<Tab> createTab(@RequestBody CreateTabReq req, @RequestParam Long categoryId){
-        Tab tab = tabService.createTab(req, categoryId);
+    public ResponseEntity<String> createTab(@RequestBody CreateTabReq req, @RequestParam Long categoryId){
+        tabService.createTab(req, categoryId);
 
-        return ResponseEntity.ok(tab);
+        return ResponseEntity.ok("생성 완료");
     }
 
     @GetMapping("/list")
