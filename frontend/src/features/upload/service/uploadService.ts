@@ -247,7 +247,20 @@ export const validateFileType = (
   return allowedTypes.some((type) => type.toLowerCase() === fileExtension);
 };
 
-// 파일 이름 정리
-export const sanitizeFileName = (fileName: string): string => {
-  return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+// ✅ 파일 삭제
+export const deleteFile = async (fileId: number): Promise<void> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/files/delete?fileId=${fileId}`, {
+      method: "DELETE",
+      credentials: "omit",
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "Unknown error");
+      throw new Error(`파일 삭제 실패 (${response.status}): ${errorText}`);
+    }
+  } catch (error) {
+    console.error("파일 삭제 오류:", error);
+    throw error;
+  }
 };

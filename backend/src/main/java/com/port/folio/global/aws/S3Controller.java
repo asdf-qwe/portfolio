@@ -4,6 +4,7 @@ package com.port.folio.global.aws;
 
 import com.port.folio.domain.post.dto.FileResource;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -52,5 +53,11 @@ public class S3Controller {
     @GetMapping("/category/{categoryId}/main-video")
     public String getMainVideoByCategory(@PathVariable Long categoryId) {
         return s3Service.getMainVideoByCategory(categoryId);
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deleteFile(@RequestParam Long fileId){
+        s3Service.deleteFiles(fileId);
+        return ResponseEntity.ok("삭제 완료");
     }
 }

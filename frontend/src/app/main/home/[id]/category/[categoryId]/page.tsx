@@ -25,6 +25,7 @@ import {
   getFilesByCategory,
   uploadMainVideo,
   getMainVideoByCategory,
+  deleteFile,
   FileResource,
 } from "@/features/upload/service/uploadService";
 import FileUpload from "@/features/upload/components/FileUpload";
@@ -255,9 +256,28 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     await loadResources();
   };
 
-  const handleDeleteResource = (id: string) => {
-    const updatedResources = resources.filter((resource) => resource.id !== id);
-    setResources(updatedResources);
+  const handleDeleteResource = async (id: string) => {
+    if (!canEdit) {
+      alert("삭제 권한이 없습니다.");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      "정말로 이 자료를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다."
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await deleteFile(parseInt(id));
+      // 삭제 성공 시 로컬 상태 업데이트
+      const updatedResources = resources.filter(
+        (resource) => resource.id !== id
+      );
+      setResources(updatedResources);
+    } catch (error) {
+      console.error("자료 삭제 실패:", error);
+      alert("자료 삭제에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
   const formatFileSize = (bytes: number | undefined | null) => {
@@ -1255,10 +1275,11 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                               key={resource.id}
                               className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
                             >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3 flex-1">
+                              <div className="flex items-start space-x-3">
+                                {/* 아이콘 부분 */}
+                                <div className="flex-shrink-0 mt-1">
                                   {isImageFile(resource.name) ? (
-                                    <div className="w-8 h-8 rounded overflow-hidden bg-gray-100 flex-shrink-0">
+                                    <div className="w-8 h-8 rounded overflow-hidden bg-gray-100">
                                       <img
                                         src={resource.url}
                                         alt={resource.name}
@@ -1292,48 +1313,56 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                                       />
                                     </svg>
                                   )}
-                                  <div className="flex-1 min-w-0">
-                                    <a
-                                      href={resource.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="block"
-                                    >
-                                      <h4 className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer truncate">
-                                        {resource.title || resource.name}
-                                      </h4>
-                                    </a>
-                                    <p className="text-sm text-gray-500">
-                                      {formatDate(resource.uploadDate)} •{" "}
-                                      {formatFileSize(resource.size)}
-                                    </p>
+                                </div>
+
+                                {/* 텍스트 및 버튼 부분 */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <a
+                                        href={resource.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block"
+                                      >
+                                        <h4 className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer truncate">
+                                          {resource.title || resource.name}
+                                        </h4>
+                                      </a>
+                                      <p className="text-sm text-gray-500 mt-1">
+                                        {formatDate(resource.uploadDate)} •{" "}
+                                        {formatFileSize(resource.size)}
+                                      </p>
+                                    </div>
+
+                                    {/* 삭제 버튼 */}
+                                    {canEdit && (
+                                      <div className="flex-shrink-0 ml-2">
+                                        <button
+                                          onClick={() =>
+                                            handleDeleteResource(resource.id)
+                                          }
+                                          className="inline-flex items-center p-1 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                          title="삭제"
+                                        >
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                            />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
-                                {canEdit && (
-                                  <div className="ml-4">
-                                    <button
-                                      onClick={() =>
-                                        handleDeleteResource(resource.id)
-                                      }
-                                      className="inline-flex items-center p-1 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                      title="삭제"
-                                    >
-                                      <svg
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                        />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                )}
                               </div>
                             </div>
                           ))}

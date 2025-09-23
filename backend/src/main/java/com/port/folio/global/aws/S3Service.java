@@ -227,4 +227,11 @@ public class S3Service {
                 .key(key)
                 .build());
     }
+
+    public void deleteFiles(Long fileId){
+        File file = fileRepository.findById(fileId)
+                .orElseThrow(()-> new IllegalArgumentException("파일을 찾을 수 없습니다."));
+        deleteFile(file.getUrl());
+        fileRepository.delete(file);
+    }
 }
