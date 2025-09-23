@@ -32,7 +32,6 @@ public class PostService {
         Tab tab = tabRepository.findById(tabId).orElseThrow(()->new IllegalArgumentException("탭이 없습니다"));
 
         Post post = Post.builder()
-                .title(dto.getTitle())
                 .content(dto.getContent())
                 .imageUrl(dto.getImageUrl())
                 .category(category)
@@ -47,7 +46,6 @@ public class PostService {
         List<Post> posts = postRepository.findByCategoryId(categoryId);
         return posts.stream()
                 .map(post -> new PostListDto(
-                        post.getTitle(),
                         post.getViews()
                 ))
                 .collect(Collectors.toList());
@@ -57,11 +55,10 @@ public class PostService {
         Post post = postRepository.findByTabId(tabId);
 
         if (post == null) {
-            return new PostResponse(null, null, null); // 빈 응답
+            return new PostResponse(null, null); // 빈 응답
         }
 
         return new PostResponse(
-                post.getTitle(),
                 post.getContent(),
                 post.getImageUrl()
         );
@@ -70,7 +67,6 @@ public class PostService {
     public String updatePost(CreatePostDto dto, Long tabId) {
         Post post = postRepository.findByTabId(tabId);
 
-        post.setTitle(dto.getTitle());
         post.setContent(dto.getContent());
         post.setImageUrl(dto.getImageUrl());
 

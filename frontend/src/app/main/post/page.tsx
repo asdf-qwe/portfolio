@@ -30,7 +30,6 @@ const PostListContent: React.FC = () => {
 
   // 새 게시글 폼 상태
   const [newPost, setNewPost] = useState<CreatePostDto>({
-    title: "",
     content: "",
     imageUrl: "",
   });
@@ -83,7 +82,7 @@ const PostListContent: React.FC = () => {
         router.push(returnTo);
       } else {
         // 폼 초기화
-        setNewPost({ title: "", content: "", imageUrl: "" });
+        setNewPost({ content: "", imageUrl: "" });
         // 목록 새로고침
         fetchPosts();
       }
@@ -101,16 +100,6 @@ const PostListContent: React.FC = () => {
       <div className="mb-8 p-4 border rounded">
         <h2 className="text-xl font-bold mb-4">새 게시글 작성</h2>
         <form onSubmit={handleCreatePost} className="space-y-4">
-          <div>
-            <input
-              type="text"
-              name="title"
-              value={newPost.title}
-              onChange={handleInputChange}
-              placeholder="제목"
-              className="w-full p-2 border rounded"
-            />
-          </div>
           <div>
             <textarea
               name="content"
@@ -164,8 +153,6 @@ const PostListContent: React.FC = () => {
         <div className="p-4 border rounded">
           <h2 className="text-xl font-bold mb-4">게시글 상세</h2>
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">{selectedPost.title}</h3>
-            <p className="text-gray-600">조회수: {selectedPost.view}</p>
             {selectedPost.imageUrl && (
               <Image
                 src={selectedPost.imageUrl}

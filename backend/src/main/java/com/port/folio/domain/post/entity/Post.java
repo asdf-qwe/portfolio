@@ -15,7 +15,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public class Post extends BaseEntity {
 
-    private String title;
     private String content;
     private String imageUrl;
     private int views = 0;

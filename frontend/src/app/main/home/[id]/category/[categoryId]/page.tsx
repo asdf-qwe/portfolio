@@ -6,6 +6,7 @@ import ProjectHeader from "@/components/ProjectHeader";
 import {
   getPostByTab,
   updatePost,
+  createPost,
   getIntroduce,
   createIntroduce,
   updateIntroduce,
@@ -120,8 +121,16 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   }>({});
   const [editingTab, setEditingTab] = useState<string | null>(null);
   const [postContent, setPostContent] = useState("");
-  const [postTitle, setPostTitle] = useState("");
   const [isSavingPost, setIsSavingPost] = useState(false);
+
+  // 링크를 클릭 가능하게 변환하는 함수
+  const parseLinks = (text: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const html = text.replace(urlRegex, (url) =>
+      `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">${url}</a>`
+    );
+    return html;
+  };
 
   // 접근 권한 체크
   const isOwner = isLoggedIn && user && user.id?.toString() === userId;
@@ -365,19 +374,11 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   // 탭 게시글 편집 시작
   const startEditingTabPost = async (tabId: string) => {
     const existingPost = tabPosts[parseInt(tabId)];
-    if (
-      existingPost &&
-      ((existingPost.title && existingPost.title.trim()) ||
-        (existingPost.content && existingPost.content.trim()))
-    ) {
+    if (existingPost && existingPost.content && existingPost.content.trim()) {
       // 기존 내용이 있으면 로드
-      setPostTitle(existingPost.title || "");
-      setPostContent(existingPost.content || "");
+      setPostContent(existingPost.content);
     } else {
-      // 내용이 없으면 기본 제목으로 시작
-      setPostTitle(
-        `${tabs.find((t) => t.id.toString() === tabId)?.tabName || "탭"} 내용`
-      );
+      // 내용이 없으면 빈 내용으로 시작
       setPostContent("");
     }
     setEditingTab(tabId);
@@ -391,25 +392,26 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       setIsSavingPost(true);
 
       const postData = {
-        title:
-          postTitle.trim() ||
-          `${
-            tabs.find((t) => t.id.toString() === editingTab)?.tabName || "탭"
-          } 내용`,
         content: postContent,
         imageUrl: "",
       };
 
       const tabId = parseInt(editingTab);
+      const existingPost = tabPosts[tabId];
 
-      // 항상 수정 API 사용 (탭 생성 시 post가 자동으로 생성되므로)
-      await updatePost(postData, tabId);
+      // 게시글이 존재하면 수정, 없으면 생성
+      if (existingPost) {
+        // 기존 게시글이 있으면 수정 API 사용
+        await updatePost(postData, tabId);
+      } else {
+        // 게시글이 없으면 생성 API 사용
+        await createPost(postData, parseInt(categoryId), tabId);
+      }
 
       // 게시글 저장 후 해당 탭의 게시글 다시 가져오기
       await fetchTabPost(tabId);
 
       setEditingTab(null);
-      setPostTitle("");
       setPostContent("");
     } catch (error) {
       console.error("게시글 저장 실패:", error);
@@ -421,7 +423,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   // 편집 취소
   const cancelEditingTabPost = () => {
     setEditingTab(null);
-    setPostTitle("");
     setPostContent("");
   };
 
@@ -429,10 +430,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const renderTabPostContent = (tab: TabRes) => {
     const tabId = tab.id.toString();
     const post = tabPosts[tab.id];
-    const hasContent =
-      post &&
-      ((post.title && post.title.trim()) ||
-        (post.content && post.content.trim()));
+    const hasContent = post && post.content && post.content.trim();
 
     if (editingTab === tabId) {
       return (
@@ -442,19 +440,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
           </h3>
 
           <div className="space-y-4 text-left">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                제목
-              </label>
-              <input
-                type="text"
-                value={postTitle}
-                onChange={(e) => setPostTitle(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-                placeholder="게시글 제목을 입력하세요"
-              />
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 내용
@@ -490,63 +475,42 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
     if (hasContent) {
       return (
-        <div className="max-w-2xl mx-auto text-left">
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xl font-semibold text-gray-900">
-              {post?.title || `${tab.tabName} 내용`}
-            </h3>
-            {canEdit && (
-              <button
-                onClick={() => startEditingTabPost(tabId)}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
-              >
-                편집
-              </button>
-            )}
+        <div className="max-w-none">
+          <div className="prose prose-lg max-w-none">
+            <div
+              className="text-gray-700 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: parseLinks(post?.content || "내용이 없습니다.") }}
+            />
           </div>
-
-          <div className="prose max-w-none">
-            <pre className="whitespace-pre-wrap text-gray-700">
-              {post?.content || "내용이 없습니다."}
-            </pre>
-          </div>
-
-          {post?.createdAt && (
-            <p className="text-sm text-gray-500 mt-4">
-              작성일: {new Date(post.createdAt).toLocaleDateString()}
-            </p>
-          )}
         </div>
       );
     }
 
     return (
-      <div>
-        <svg
-          className="w-16 h-16 text-gray-400 mx-auto mb-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          {tab.tabName} 컨텐츠
-        </h3>
-        <p className="text-gray-500 mb-4">이 탭의 내용을 편집해보세요.</p>
-        {canEdit && (
-          <button
-            onClick={() => startEditingTabPost(tabId)}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            편집하기
-          </button>
-        )}
+      <div className="text-center py-12">
+        <div className="max-w-sm mx-auto">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            {tab.tabName} 컨텐츠
+          </h3>
+          <p className="text-gray-500 text-sm">
+            아직 작성된 내용이 없습니다.
+          </p>
+        </div>
       </div>
     );
   };
@@ -1367,7 +1331,10 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                         </h2>
                         {canEdit && (
                           <div className="flex gap-2">
-                            <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                            <button
+                              onClick={() => startEditingTabPost(tab.id.toString())}
+                              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                            >
                               <div className="flex items-center gap-2">
                                 <svg
                                   className="w-4 h-4"
@@ -1390,10 +1357,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                       </div>
 
                       {/* 탭 컨텐츠 */}
-                      <div className="min-h-[300px] p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-                        <div className="text-center">
-                          {renderTabPostContent(tab)}
-                        </div>
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        {renderTabPostContent(tab)}
                       </div>
                     </div>
                   )

@@ -141,7 +141,14 @@ export async function getPostByTab(
       );
     }
 
-    return await response.json();
+    const post = await response.json();
+
+    // 데이터가 없거나 content가 비어있는 경우 null 반환
+    if (!post || !post.content || post.content.trim() === "") {
+      return null;
+    }
+
+    return post;
   } catch (error) {
     console.error(`탭 게시글 조회 실패 - tabId: ${tabId}`, error);
 

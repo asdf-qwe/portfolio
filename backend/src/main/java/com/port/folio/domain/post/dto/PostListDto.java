@@ -7,6 +7,5 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter@Setter
 public class PostListDto {
-    private String title;
     private int view;
 }
