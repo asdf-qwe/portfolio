@@ -25,6 +25,7 @@ import {
   getFilesByCategory,
   uploadMainVideo,
   getMainVideoByCategory,
+  FileResource,
 } from "@/features/upload/service/uploadService";
 import FileUpload from "@/features/upload/components/FileUpload";
 
@@ -63,14 +64,6 @@ const CONSTANTS = {
     ".rar",
   ] as string[],
 } as const;
-
-interface FileResource {
-  id: string;
-  name: string;
-  url: string;
-  uploadDate: string;
-  size: number;
-}
 
 interface CategoryPageProps {
   params: Promise<{
@@ -126,8 +119,10 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   // 링크를 클릭 가능하게 변환하는 함수
   const parseLinks = (text: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const html = text.replace(urlRegex, (url) =>
-      `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">${url}</a>`
+    const html = text.replace(
+      urlRegex,
+      (url) =>
+        `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">${url}</a>`
     );
     return html;
   };
@@ -215,19 +210,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const loadResources = useCallback(async () => {
     try {
       setIsResourcesLoading(true);
-      const fileUrls = await getFilesByCategory(parseInt(categoryId));
-
-      // URL 목록을 FileResource 형태로 변환
-      const resourcesFromApi = fileUrls.map((url, index) => {
-        const fileName = url.split("/").pop() || `파일_${index + 1}`;
-        return {
-          id: `api_${index}`,
-          name: fileName,
-          url: url,
-          uploadDate: new Date().toISOString(),
-          size: 0,
-        };
-      });
+      const resourcesFromApi = await getFilesByCategory(parseInt(categoryId));
 
       setResources(resourcesFromApi);
     } catch (error) {
@@ -239,21 +222,12 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   }, [categoryId]);
 
   const handleUploadSuccess = async (url: string, fileName: string) => {
-    const newResource: FileResource = {
-      id: `new_${Date.now()}`,
-      name: fileName,
-      url: url,
-      uploadDate: new Date().toISOString(),
-      size: 0,
-    };
+    // 업로드 성공 시 목록을 클리어하고 로딩 상태로 전환
+    setResources([]);
+    setIsResourcesLoading(true);
 
-    // 새 파일을 목록에 즉시 추가
-    setResources((prev) => [newResource, ...prev]);
-
-    // 전체 목록을 다시 로드하여 서버와 동기화
-    setTimeout(() => {
-      loadResources();
-    }, 1000);
+    // 서버에서 최신 데이터 다시 로드
+    await loadResources();
   };
 
   const handleDeleteResource = (id: string) => {
@@ -261,24 +235,27 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     setResources(updatedResources);
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "알 수 없음";
-
-    const units = ["Bytes", "KB", "MB", "GB"];
-    const unitIndex = Math.floor(Math.log(bytes) / Math.log(1024));
-    const size = (bytes / Math.pow(1024, unitIndex)).toFixed(2);
-
-    return `${size} ${units[unitIndex]}`;
+  const formatFileSize = (bytes: number | undefined | null) => {
+    if (!bytes || bytes === 0 || isNaN(bytes)) return "알 수 없음";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const formatDate = (dateString: string | undefined | null) => {
+    if (!dateString) return "알 수 없음";
+    try {
+      return new Date(dateString).toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      return "알 수 없음";
+    }
   };
 
   // 대표 동영상 업로드 처리
@@ -479,7 +456,9 @@ export default function CategoryPage({ params }: CategoryPageProps) {
           <div className="prose prose-lg max-w-none">
             <div
               className="text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: parseLinks(post?.content || "내용이 없습니다.") }}
+              dangerouslySetInnerHTML={{
+                __html: parseLinks(post?.content || "내용이 없습니다."),
+              }}
             />
           </div>
         </div>
@@ -507,9 +486,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             {tab.tabName} 컨텐츠
           </h3>
-          <p className="text-gray-500 text-sm">
-            아직 작성된 내용이 없습니다.
-          </p>
+          <p className="text-gray-500 text-sm">아직 작성된 내용이 없습니다.</p>
         </div>
       </div>
     );
@@ -1276,7 +1253,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                                       className="block"
                                     >
                                       <h4 className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer truncate">
-                                        {resource.name}
+                                        {resource.title || resource.name}
                                       </h4>
                                     </a>
                                     <p className="text-sm text-gray-500">
@@ -1332,7 +1309,9 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                         {canEdit && (
                           <div className="flex gap-2">
                             <button
-                              onClick={() => startEditingTabPost(tab.id.toString())}
+                              onClick={() =>
+                                startEditingTabPost(tab.id.toString())
+                              }
                               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                             >
                               <div className="flex items-center gap-2">

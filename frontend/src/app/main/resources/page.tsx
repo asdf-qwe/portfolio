@@ -3,14 +3,7 @@
 import { useState, useEffect } from "react";
 import ProjectHeader from "@/components/ProjectHeader";
 import FileUpload from "@/features/upload/components/FileUpload";
-
-interface FileResource {
-  id: string;
-  name: string;
-  url: string;
-  uploadDate: string;
-  size: number;
-}
+import { FileResource } from "@/features/upload/service/uploadService";
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<FileResource[]>([]);
@@ -38,6 +31,7 @@ export default function ResourcesPage() {
     const newResource: FileResource = {
       id: Date.now().toString(),
       name: fileName,
+      title: fileName, // ✅ title 추가
       url: url,
       uploadDate: new Date().toISOString(),
       size: 0, // 실제로는 백엔드에서 파일 크기 정보를 받아와야 함
@@ -54,22 +48,27 @@ export default function ResourcesPage() {
     localStorage.setItem("resources", JSON.stringify(updatedResources));
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "알 수 없음";
+  const formatFileSize = (bytes: number | undefined | null) => {
+    if (!bytes || bytes === 0 || isNaN(bytes)) return "알 수 없음";
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const formatDate = (dateString: string | undefined | null) => {
+    if (!dateString) return "알 수 없음";
+    try {
+      return new Date(dateString).toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      return "알 수 없음";
+    }
   };
 
   return (
@@ -145,7 +144,7 @@ export default function ResourcesPage() {
                         </svg>
                         <div>
                           <h3 className="font-medium text-gray-900">
-                            {resource.name}
+                            {resource.title || resource.name}
                           </h3>
                           <p className="text-sm text-gray-500">
                             {formatDate(resource.uploadDate)} •{" "}

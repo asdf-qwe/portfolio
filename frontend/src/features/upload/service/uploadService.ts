@@ -2,15 +2,29 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+// 파일 리소스 인터페이스
+export interface FileResource {
+  id: string;
+  name: string;
+  title?: string;
+  url: string;
+  uploadDate: string;
+  size: number;
+}
+
 // ✅ 일반 자료 업로드 (categoryId 필요)
 export const uploadFileToS3 = async (
   file: File,
-  categoryId: number
+  categoryId: number,
+  title?: string
 ): Promise<string> => {
   try {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("categoryId", categoryId.toString());
+    if (title) {
+      formData.append("title", title);
+    }
 
     // AbortController로 타임아웃 설정 (3분)
     const controller = new AbortController();
@@ -142,7 +156,7 @@ export const uploadMainVideo = async (
 // ✅ 카테고리별 파일 조회
 export const getFilesByCategory = async (
   categoryId: number
-): Promise<string[]> => {
+): Promise<FileResource[]> => {
   try {
     const response = await fetch(
       `${API_BASE_URL}/api/files/category/${categoryId}`,
@@ -218,13 +232,19 @@ export const validateFileSize = (
   return file.size <= maxSizeBytes;
 };
 
-// 파일 타입 체크
+// 파일 타입 체크 (확장자 기반)
 export const validateFileType = (
   file: File,
   allowedTypes: string[] = []
 ): boolean => {
   if (allowedTypes.length === 0) return true;
-  return allowedTypes.some((type) => file.type.includes(type));
+
+  // 파일 이름에서 확장자 추출
+  const fileName = file.name.toLowerCase();
+  const fileExtension = fileName.substring(fileName.lastIndexOf("."));
+
+  // 허용된 확장자와 비교
+  return allowedTypes.some((type) => type.toLowerCase() === fileExtension);
 };
 
 // 파일 이름 정리

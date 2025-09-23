@@ -16,9 +16,13 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public class File extends BaseEntity {
 
+    private String title;
+
     private String url;
 
     private String type;
+
+    private Long size;
 
     @OneToOne(fetch = FetchType.LAZY)
     private Category category;

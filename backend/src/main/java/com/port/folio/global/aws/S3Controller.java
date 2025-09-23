@@ -1,6 +1,8 @@
 package com.port.folio.global.aws;
 
 
+
+import com.port.folio.domain.post.dto.FileResource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,8 +20,8 @@ public class S3Controller {
     // ✅ 일반 자료 업로드
     @PostMapping("/upload")
     public String uploadFile(@RequestParam("file") MultipartFile file,
-                             @RequestParam Long categoryId) throws IOException {
-        return s3Service.uploadFile(file, "files/" + categoryId);
+                             @RequestParam Long categoryId, @RequestParam String title) throws IOException {
+        return s3Service.uploadFileToCategory(file, categoryId, title);
     }
 
     // ✅ 유저 프로필 이미지 업로드
@@ -38,8 +40,8 @@ public class S3Controller {
 
     // ✅ 조회
     @GetMapping("/category/{categoryId}")
-    public List<String> getFilesByCategory(@PathVariable Long categoryId) {
-        return s3Service.getUrlsByCategory(categoryId);
+    public List<FileResource> getFilesByCategory(@PathVariable Long categoryId) {
+        return s3Service.getFilesByCategory(categoryId);
     }
 
     @GetMapping("/user/{userId}/profile-image")

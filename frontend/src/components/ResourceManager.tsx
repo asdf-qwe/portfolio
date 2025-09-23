@@ -2,15 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import FileUpload from "@/features/upload/components/FileUpload";
-import { getFilesByCategory } from "@/features/upload/service/uploadService";
-
-interface FileResource {
-  id: string;
-  name: string;
-  url: string;
-  uploadDate: string;
-  size: number;
-}
+import {
+  getFilesByCategory,
+  FileResource,
+} from "@/features/upload/service/uploadService";
 
 interface ResourceManagerProps {
   categoryId: number; // ✅ categoryId로 변경하고 number 타입으로 수정
@@ -30,19 +25,7 @@ export default function ResourceManager({
     try {
       setIsLoading(true);
       // ✅ 백엔드 API에서 파일 목록 가져오기
-      const fileUrls = await getFilesByCategory(categoryId);
-
-      // URL 목록을 FileResource 형태로 변환
-      const resourcesFromApi = fileUrls.map((url, index) => {
-        const fileName = url.split("/").pop() || `파일_${index + 1}`;
-        return {
-          id: `api_${index}`,
-          name: fileName,
-          url: url,
-          uploadDate: new Date().toISOString(), // 실제로는 백엔드에서 날짜 정보를 받아와야 함
-          size: 0, // 실제로는 백엔드에서 파일 크기 정보를 받아와야 함
-        };
-      });
+      const resourcesFromApi = await getFilesByCategory(categoryId);
 
       // 기존 localStorage 데이터와 병합 (임시 호환성)
       const savedResources = localStorage.getItem(storageKey);
@@ -69,6 +52,7 @@ export default function ResourceManager({
     const newResource: FileResource = {
       id: `new_${Date.now()}`,
       name: fileName,
+      title: fileName, // ✅ title 추가
       url: url,
       uploadDate: new Date().toISOString(),
       size: 0, // 실제로는 백엔드에서 파일 크기 정보를 받아와야 함
@@ -89,22 +73,27 @@ export default function ResourceManager({
     localStorage.setItem(storageKey, JSON.stringify(updatedResources));
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "알 수 없음";
+  const formatFileSize = (bytes: number | undefined | null) => {
+    if (!bytes || bytes === 0 || isNaN(bytes)) return "알 수 없음";
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const formatDate = (dateString: string | undefined | null) => {
+    if (!dateString) return "알 수 없음";
+    try {
+      return new Date(dateString).toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      return "알 수 없음";
+    }
   };
 
   return (
@@ -180,7 +169,7 @@ export default function ResourceManager({
                         className="block"
                       >
                         <h4 className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer truncate">
-                          {resource.name}
+                          {resource.title || resource.name}
                         </h4>
                       </a>
                       <p className="text-sm text-gray-500">

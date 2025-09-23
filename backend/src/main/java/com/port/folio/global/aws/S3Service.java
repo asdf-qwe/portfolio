@@ -2,6 +2,7 @@ package com.port.folio.global.aws;
 
 import com.port.folio.domain.category.entity.Category;
 import com.port.folio.domain.category.repository.CategoryRepository;
+import com.port.folio.domain.post.dto.FileResource;
 import com.port.folio.domain.post.entity.File;
 import com.port.folio.domain.post.repository.FileRepository;
 import com.port.folio.domain.user.entity.User;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -55,6 +57,7 @@ public class S3Service {
         this.userRepository = userRepository;
     }
 
+
     /**
      * 공통 파일 업로드 (카테고리/유저 구분 없이)
      */
@@ -71,6 +74,28 @@ public class S3Service {
         );
 
         return key;
+    }
+
+    /**
+     * 카테고리 자료 업로드 (DB 저장 포함)
+     */
+    public String uploadFileToCategory(MultipartFile file, Long categoryId, String title) throws IOException {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("카테고리가 없습니다"));
+
+        String key = uploadFile(file, "files/" + categoryId);
+
+        File fileEntity = File.builder()
+                .title(title)
+                .url(key)
+                .category(category)
+                .size(file.getSize())
+                .type("FILE") // 또는 적절한 타입
+                .build();
+
+        fileRepository.save(fileEntity);
+
+        return generatePresignedUrl(key);
     }
 
     /**
@@ -98,11 +123,21 @@ public class S3Service {
     /**
      * 카테고리별 자료 리스트 조회
      */
-    public List<String> getUrlsByCategory(Long categoryId) {
+    public List<FileResource> getFilesByCategory(Long categoryId) {
         List<File> files = fileRepository.findAllByCategoryIdExcludeVideoAndImage(categoryId);
-        return generatePresignedUrls(files.stream().map(File::getUrl).toList());
+        return files.stream()
+                .map(file -> {
+                    FileResource resource = new FileResource();
+                    resource.setId(file.getId().toString());
+                    resource.setName(file.getTitle()); // title을 name으로 사용 (또는 별도 originalName 필드가 있다면 그것 사용)
+                    resource.setTitle(file.getTitle()); // title 필드
+                    resource.setUrl(generatePresignedUrl(file.getUrl()));
+                    resource.setUploadDate(file.getCreatedAt()); // BaseEntity에서 상속받은 필드
+                    resource.setSize(file.getSize() != null ? file.getSize() : 0L);
+                    return resource;
+                })
+                .collect(Collectors.toList());
     }
-
     /**
      * 유저 프로필 이미지 업로드 (1개만 유지)
      */

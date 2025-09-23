@@ -46,7 +46,7 @@ export default function FileUpload({
 
     try {
       setIsUploading(true);
-      const url = await uploadFileToS3(file, categoryId); // ✅ categoryId 전달
+      const url = await uploadFileToS3(file, categoryId, file.name); // ✅ 파일명 자동 사용
       onUploadSuccess(url, file.name);
 
       // 파일 입력 초기화
