@@ -1,0 +1,42 @@
+// 상수 정의
+export const CONSTANTS = {
+  MAX_VIDEO_SIZE_MB: 100,
+  LOADING_SPINNER_SIZE: {
+    SMALL: "h-4 w-4",
+    MEDIUM: "h-8 w-8",
+    LARGE: "h-32 w-32",
+  },
+  COLORS: {
+    BLUE: "bg-blue-500 hover:bg-blue-600",
+    GREEN: "bg-green-500 hover:bg-green-600",
+    YELLOW: "bg-yellow-500 hover:bg-yellow-600",
+    GRAY: "bg-gray-500 hover:bg-gray-600",
+    RED: "bg-red-100 hover:bg-red-200 text-red-600",
+  },
+  ICON_SIZE: {
+    SMALL: "w-4 h-4",
+    MEDIUM: "w-10 h-10",
+    LARGE: "w-16 h-16",
+  },
+  GRID_COLS: "md:grid-cols-5",
+  ASPECT_RATIO: "aspect-[16/9]",
+  FILE_TYPES: [
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".ppt",
+    ".pptx",
+    ".xls",
+    ".xlsx",
+    ".txt",
+    ".zip",
+    ".rar",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".webp",
+    ".bmp",
+    ".svg",
+  ] as string[],
+} as const;
