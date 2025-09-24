@@ -162,23 +162,39 @@ export const createCategoryPageHandlers = (
   ) => {
     const content = value || "";
 
-    // 슬래시 입력 감지 - 마지막 문자가 "/"일 때 (이전 상태에서는 "/"가 아니었을 때)
-    const lastChar = content.slice(-1);
-    const prevLastChar = previousContent.slice(-1);
+    // 슬래시 입력 감지 - 커서 위치의 바로 앞 문자가 "/"일 때
+    const textarea = document.activeElement as HTMLTextAreaElement;
+    if (textarea && textarea.selectionStart !== null) {
+      const cursorPosition = textarea.selectionStart;
+      const charBeforeCursor =
+        cursorPosition > 0 ? content[cursorPosition - 1] : "";
 
-    if (lastChar === "/" && prevLastChar !== "/" && !showSlashMenu) {
-      // 커서 위치 계산 (간단한 구현)
-      const textarea = document.activeElement as HTMLTextAreaElement;
-      if (textarea) {
+      if (charBeforeCursor === "/" && !showSlashMenu) {
         const rect = textarea.getBoundingClientRect();
+        const textMetrics = textarea.getBoundingClientRect();
+        const lineHeight =
+          parseInt(getComputedStyle(textarea).lineHeight) || 20;
+
+        // 커서 위치에 따른 드롭다운 위치 계산
+        const lines = content.substring(0, cursorPosition).split("\n");
+        const currentLine = lines.length - 1;
+        const currentLineText = lines[currentLine];
+
+        // 대략적인 커서 X 위치 계산 (문자 너비를 고려한 간단한 계산)
+        const approxCharWidth = 8; // 평균 문자 너비
+        const cursorX = currentLineText.length * approxCharWidth;
+
         setSlashMenuPosition({
-          top: rect.top + rect.height + 5,
-          left: rect.left,
+          top: rect.top + currentLine * lineHeight + lineHeight + 5,
+          left: rect.left + Math.min(cursorX, rect.width - 200), // 드롭다운이 화면을 벗어나지 않도록
         });
         setCurrentEditor(editorType);
         setShowSlashMenu(true);
+      } else if (charBeforeCursor !== "/") {
+        setShowSlashMenu(false);
       }
-    } else if (lastChar !== "/") {
+    } else if (!textarea) {
+      // textarea가 아닌 경우 (드래그 등으로 포커스가 벗어난 경우)
       setShowSlashMenu(false);
     }
 
