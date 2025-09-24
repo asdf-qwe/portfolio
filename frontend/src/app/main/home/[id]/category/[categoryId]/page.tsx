@@ -223,12 +223,11 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   ) => {
     const content = value || "";
 
-    // 슬래시 입력 감지 - content에 "/"가 처음 나타날 때
-    if (
-      content.includes("/") &&
-      !previousContent.includes("/") &&
-      !showSlashMenu
-    ) {
+    // 슬래시 입력 감지 - 마지막 문자가 "/"일 때 (이전 상태에서는 "/"가 아니었을 때)
+    const lastChar = content.slice(-1);
+    const prevLastChar = previousContent.slice(-1);
+
+    if (lastChar === "/" && prevLastChar !== "/" && !showSlashMenu) {
       // 커서 위치 계산 (간단한 구현)
       const textarea = document.activeElement as HTMLTextAreaElement;
       if (textarea) {
@@ -240,7 +239,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         setCurrentEditor(editorType);
         setShowSlashMenu(true);
       }
-    } else if (!content.includes("/") && showSlashMenu) {
+    } else if (lastChar !== "/") {
       setShowSlashMenu(false);
     }
 
@@ -287,15 +286,10 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     return imageExtensions.includes(extension);
   };
 
-  // 링크를 클릭 가능하게 변환하는 함수
-  const parseLinks = (text: string) => {
+  // URL을 자동으로 링크로 변환하는 함수
+  const autoLinkUrls = (text: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const html = text.replace(
-      urlRegex,
-      (url) =>
-        `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">${url}</a>`
-    );
-    return html;
+    return text.replace(urlRegex, (url) => `[${url}](${url})`);
   };
 
   // 접근 권한 체크
@@ -666,7 +660,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                     </h3>
                   ),
                   p: ({ children }) => (
-                    <p className="mb-4 text-gray-700 leading-relaxed">
+                    <p className="mb-4 text-gray-700 leading-relaxed font-medium">
                       {children}
                     </p>
                   ),
@@ -698,9 +692,19 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                       {children}
                     </pre>
                   ),
+                  a: ({ children, href }) => (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline"
+                    >
+                      {children}
+                    </a>
+                  ),
                 }}
               >
-                {post?.content || "내용이 없습니다."}
+                {autoLinkUrls(post?.content || "내용이 없습니다.")}
               </ReactMarkdown>
             </div>
           </div>
@@ -1270,7 +1274,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                                       </h3>
                                     ),
                                     p: ({ children }) => (
-                                      <p className="mb-4 text-gray-700 leading-relaxed">
+                                      <p className="mb-4 text-gray-700 leading-relaxed font-medium">
                                         {children}
                                       </p>
                                     ),
@@ -1306,7 +1310,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                                     ),
                                   }}
                                 >
-                                  {introduce.content}
+                                  {autoLinkUrls(introduce.content)}
                                 </ReactMarkdown>
                               </div>
                             </div>
