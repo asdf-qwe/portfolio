@@ -38,7 +38,7 @@ export default function HomePage({ params }: HomePageProps) {
     categoriesLoading: true,
     currentPage: 0,
     totalPages: 0,
-    itemsPerPage: 6,
+    itemsPerPage: 3, // 한 페이지에 3개의 프로젝트 표시
     isCreatingCategory: false,
     newCategoryTitle: "",
     showCreateForm: false,

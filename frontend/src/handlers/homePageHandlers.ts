@@ -1,8 +1,14 @@
 import React from "react";
 import { CategoryResponse } from "@/features/category/types/category";
 import { categoryService } from "@/features/category/service/categoryService";
-import { uploadProfileImage, getUserProfileImage } from "@/features/upload/service/uploadService";
-import { getUserLocation, updateUserLocation } from "@/features/main/service/locationService";
+import {
+  uploadProfileImage,
+  getUserProfileImage,
+} from "@/features/upload/service/uploadService";
+import {
+  getUserLocation,
+  updateUserLocation,
+} from "@/features/main/service/locationService";
 import { mainService } from "@/features/main/service/mainService";
 import { MainResponse } from "@/features/main/type/main";
 import { WorkHistory } from "@/features/main/type/main";
@@ -79,7 +85,11 @@ export interface HomePageActions {
 
   // 이벤트 핸들러들
   handleLogout: () => Promise<void>;
-  handleProfileImageUpload: (event: React.ChangeEvent<HTMLInputElement>, userId: string, canEdit: boolean) => Promise<void>;
+  handleProfileImageUpload: (
+    event: React.ChangeEvent<HTMLInputElement>,
+    userId: string,
+    canEdit: boolean
+  ) => Promise<void>;
   handleCreateCategory: (userId: string, canEdit: boolean) => Promise<void>;
   scrollToProjects: (e: React.MouseEvent) => void;
   saveMainData: (userId: string, canEdit: boolean) => Promise<void>;
@@ -87,7 +97,11 @@ export interface HomePageActions {
 
   // 지도 검색 관련 핸들러들
   searchPlaces: (keyword: string, isKakaoMapsLoaded: boolean) => Promise<void>;
-  selectPlace: (place: KakaoPlace, userId: string, canEdit: boolean) => Promise<void>;
+  selectPlace: (
+    place: KakaoPlace,
+    userId: string,
+    canEdit: boolean
+  ) => Promise<void>;
   updateEmail: (userId: string, canEdit: boolean) => Promise<void>;
   updatePhoneNumber: (userId: string, canEdit: boolean) => Promise<void>;
   handleSearchInput: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -109,63 +123,66 @@ export const createHomePageActions = (
   // 데이터 로딩 함수들
   const fetchCategories = async (userId: string) => {
     try {
-      setState(prev => ({ ...prev, categoriesLoading: true }));
-      const categoriesData = await categoryService.getCategories(parseInt(userId));
-      setState(prev => ({ ...prev, categories: categoriesData }));
+      setState((prev) => ({ ...prev, categoriesLoading: true }));
+      const categoriesData = await categoryService.getCategories(
+        parseInt(userId)
+      );
+      setState((prev) => ({ ...prev, categories: categoriesData }));
     } catch (error) {
       console.error("카테고리 조회 실패:", error);
-      setState(prev => ({ ...prev, categories: [] }));
+      setState((prev) => ({ ...prev, categories: [] }));
     } finally {
-      setState(prev => ({ ...prev, categoriesLoading: false }));
+      setState((prev) => ({ ...prev, categoriesLoading: false }));
     }
   };
 
   const fetchProfileImage = async (userId: string) => {
     try {
-      setState(prev => ({ ...prev, profileImageLoading: true }));
+      setState((prev) => ({ ...prev, profileImageLoading: true }));
       const imageUrl = await getUserProfileImage(parseInt(userId));
       if (imageUrl) {
-        setState(prev => ({ ...prev, profileImageUrl: imageUrl }));
+        setState((prev) => ({ ...prev, profileImageUrl: imageUrl }));
       }
     } catch (error) {
       console.error("프로필 이미지 조회 실패:", error);
     } finally {
-      setState(prev => ({ ...prev, profileImageLoading: false }));
+      setState((prev) => ({ ...prev, profileImageLoading: false }));
     }
   };
 
   const fetchMainData = async (userId: string) => {
     try {
-      setState(prev => ({ ...prev, mainDataLoading: true }));
+      setState((prev) => ({ ...prev, mainDataLoading: true }));
       const data = await mainService.getMain(parseInt(userId));
-      setState(prev => ({ ...prev, mainData: data }));
+      setState((prev) => ({ ...prev, mainData: data }));
     } catch (error) {
       console.error("메인 데이터 조회 실패:", error);
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         mainData: {
           greeting: "안녕하세요!",
           smallGreeting: "열정과 책임감이 있는 개발자입니다.",
           name: "사용자",
-          introduce: "새로운 기술을 배우고 적용할 때 신기해 하고 좋아하며, 사용자 경험을 개선하는 데 열정을 가지고 있습니다.",
+          introduce:
+            "새로운 기술을 배우고 적용할 때 신기해 하고 좋아하며, 사용자 경험을 개선하는 데 열정을 가지고 있습니다.",
           job: "",
           workHistory: WorkHistory.ZERO,
-        }
+        },
       }));
     } finally {
-      setState(prev => ({ ...prev, mainDataLoading: false }));
+      setState((prev) => ({ ...prev, mainDataLoading: false }));
     }
   };
 
   const fetchLocationData = async (userId: string) => {
     try {
-      setState(prev => ({ ...prev, locationLoading: true }));
+      setState((prev) => ({ ...prev, locationLoading: true }));
       const locationData = await getUserLocation(parseInt(userId));
-      setState(prev => ({ ...prev, currentLocation: locationData }));
+      setState((prev) => ({ ...prev, currentLocation: locationData }));
     } catch (error) {
       console.error("위치 데이터 조회 실패:", error);
     } finally {
-      setState(prev => ({ ...prev, locationLoading: false }));
+      setState((prev) => ({ ...prev, locationLoading: false }));
     }
   };
 
@@ -194,15 +211,15 @@ export const createHomePageActions = (
     }
 
     try {
-      setState(prev => ({ ...prev, isUploadingProfile: true }));
+      setState((prev) => ({ ...prev, isUploadingProfile: true }));
       const imageUrl = await uploadProfileImage(file, parseInt(userId));
-      setState(prev => ({ ...prev, profileImageUrl: imageUrl }));
+      setState((prev) => ({ ...prev, profileImageUrl: imageUrl }));
       alert("프로필 이미지가 성공적으로 업로드되었습니다!");
     } catch (error) {
       console.error("프로필 이미지 업로드 실패:", error);
       alert("프로필 이미지 업로드에 실패했습니다. 다시 시도해주세요.");
     } finally {
-      setState(prev => ({ ...prev, isUploadingProfile: false }));
+      setState((prev) => ({ ...prev, isUploadingProfile: false }));
     }
   };
 
@@ -218,24 +235,26 @@ export const createHomePageActions = (
     }
 
     try {
-      setState(prev => ({ ...prev, isCreatingCategory: true }));
+      setState((prev) => ({ ...prev, isCreatingCategory: true }));
       await categoryService.createCategory(
         { categoryTitle: state.newCategoryTitle.trim() },
         parseInt(userId)
       );
 
-      const categoriesData = await categoryService.getCategories(parseInt(userId));
-      setState(prev => ({
+      const categoriesData = await categoryService.getCategories(
+        parseInt(userId)
+      );
+      setState((prev) => ({
         ...prev,
         categories: categoriesData,
         newCategoryTitle: "",
-        showCreateForm: false
+        showCreateForm: false,
       }));
     } catch (error) {
       console.error("카테고리 생성 실패:", error);
       alert("프로젝트 생성에 실패했습니다. 다시 시도해주세요.");
     } finally {
-      setState(prev => ({ ...prev, isCreatingCategory: false }));
+      setState((prev) => ({ ...prev, isCreatingCategory: false }));
     }
   };
 
@@ -249,20 +268,20 @@ export const createHomePageActions = (
     if (!canEdit) return;
 
     try {
-      setState(prev => ({ ...prev, isSavingMain: true }));
+      setState((prev) => ({ ...prev, isSavingMain: true }));
       await mainService.updateMain(state.editMainData, parseInt(userId));
       const updatedData = await mainService.getMain(parseInt(userId));
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         mainData: updatedData,
         isEditingMain: false,
-        isGlobalEditMode: false
+        isGlobalEditMode: false,
       }));
     } catch (error) {
       console.error("메인 정보 저장 실패:", error);
       alert("저장에 실패했습니다. 다시 시도해주세요.");
     } finally {
-      setState(prev => ({ ...prev, isSavingMain: false }));
+      setState((prev) => ({ ...prev, isSavingMain: false }));
     }
   };
 
@@ -270,9 +289,9 @@ export const createHomePageActions = (
     if (!canEdit) return;
 
     if (!state.isGlobalEditMode) {
-      setState(prev => ({ ...prev, isGlobalEditMode: true }));
+      setState((prev) => ({ ...prev, isGlobalEditMode: true }));
       if (state.mainData) {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           editMainData: {
             greeting: state.mainData!.greeting,
@@ -282,11 +301,11 @@ export const createHomePageActions = (
             job: state.mainData!.job || "",
             workHistory: state.mainData!.workHistory || WorkHistory.ZERO,
           },
-          isEditingMain: true
+          isEditingMain: true,
         }));
       }
     } else {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isGlobalEditMode: false,
         isEditingMain: false,
@@ -297,7 +316,7 @@ export const createHomePageActions = (
           introduce: "",
           job: "",
           workHistory: WorkHistory.ZERO,
-        }
+        },
       }));
     }
   };
@@ -308,28 +327,32 @@ export const createHomePageActions = (
 
     if (!isKakaoMapsLoaded) {
       console.error("❌ Kakao Maps SDK가 아직 로드되지 않음");
-      setState(prev => ({ ...prev, searchResults: [], isSearching: false }));
+      setState((prev) => ({ ...prev, searchResults: [], isSearching: false }));
       return;
     }
 
-    setState(prev => ({ ...prev, isSearching: true }));
+    setState((prev) => ({ ...prev, isSearching: true }));
     try {
       const ps = new window.kakao.maps.services.Places();
       ps.keywordSearch(keyword, (data: KakaoPlace[], status: string) => {
         if (status === window.kakao.maps.services.Status.OK) {
-          setState(prev => ({ ...prev, searchResults: data }));
+          setState((prev) => ({ ...prev, searchResults: data }));
         } else {
-          setState(prev => ({ ...prev, searchResults: [] }));
+          setState((prev) => ({ ...prev, searchResults: [] }));
         }
-        setState(prev => ({ ...prev, isSearching: false }));
+        setState((prev) => ({ ...prev, isSearching: false }));
       });
     } catch (error) {
       console.error("💥 장소 검색 에러:", error);
-      setState(prev => ({ ...prev, searchResults: [], isSearching: false }));
+      setState((prev) => ({ ...prev, searchResults: [], isSearching: false }));
     }
   };
 
-  const selectPlace = async (place: KakaoPlace, userId: string, canEdit: boolean) => {
+  const selectPlace = async (
+    place: KakaoPlace,
+    userId: string,
+    canEdit: boolean
+  ) => {
     if (!canEdit) return;
 
     try {
@@ -342,12 +365,12 @@ export const createHomePageActions = (
       };
 
       await updateUserLocation(parseInt(userId), locationData);
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         currentLocation: locationData,
         isMapSearchModalOpen: false,
         searchKeyword: "",
-        searchResults: []
+        searchResults: [],
       }));
     } catch (error) {
       console.error("위치 저장 실패:", error);
@@ -359,7 +382,7 @@ export const createHomePageActions = (
     if (!canEdit || !state.editEmail.trim()) return;
 
     try {
-      setState(prev => ({ ...prev, isUpdatingContact: true }));
+      setState((prev) => ({ ...prev, isUpdatingContact: true }));
       const locationData = {
         lat: state.currentLocation.lat,
         lng: state.currentLocation.lng,
@@ -369,17 +392,17 @@ export const createHomePageActions = (
       };
 
       await updateUserLocation(parseInt(userId), locationData);
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         currentLocation: locationData,
         isEmailEditModalOpen: false,
-        editEmail: ""
+        editEmail: "",
       }));
     } catch (error) {
       console.error("이메일 업데이트 실패:", error);
       alert("이메일 업데이트에 실패했습니다. 다시 시도해주세요.");
     } finally {
-      setState(prev => ({ ...prev, isUpdatingContact: false }));
+      setState((prev) => ({ ...prev, isUpdatingContact: false }));
     }
   };
 
@@ -387,7 +410,7 @@ export const createHomePageActions = (
     if (!canEdit || !state.editPhoneNumber.trim()) return;
 
     try {
-      setState(prev => ({ ...prev, isUpdatingContact: true }));
+      setState((prev) => ({ ...prev, isUpdatingContact: true }));
       const locationData = {
         lat: state.currentLocation.lat,
         lng: state.currentLocation.lng,
@@ -397,23 +420,23 @@ export const createHomePageActions = (
       };
 
       await updateUserLocation(parseInt(userId), locationData);
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         currentLocation: locationData,
         isPhoneEditModalOpen: false,
-        editPhoneNumber: ""
+        editPhoneNumber: "",
       }));
     } catch (error) {
       console.error("전화번호 업데이트 실패:", error);
       alert("전화번호 업데이트에 실패했습니다. 다시 시도해주세요.");
     } finally {
-      setState(prev => ({ ...prev, isUpdatingContact: false }));
+      setState((prev) => ({ ...prev, isUpdatingContact: false }));
     }
   };
 
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setState(prev => ({ ...prev, searchKeyword: value }));
+    setState((prev) => ({ ...prev, searchKeyword: value }));
 
     if (searchTimeout) {
       clearTimeout(searchTimeout);
@@ -424,7 +447,7 @@ export const createHomePageActions = (
         searchPlaces(value, state.isKakaoMapsLoaded);
       }, 300);
     } else {
-      setState(prev => ({ ...prev, searchResults: [] }));
+      setState((prev) => ({ ...prev, searchResults: [] }));
     }
   };
 
@@ -436,11 +459,20 @@ export const createHomePageActions = (
 
   // 페이지 이동 함수들
   const goToPreviousPage = () => {
-    setState(prev => ({ ...prev, currentPage: Math.max(0, prev.currentPage - 1) }));
+    setState((prev) => ({
+      ...prev,
+      currentPage: Math.max(0, prev.currentPage - 1),
+    }));
   };
 
   const goToNextPage = () => {
-    setState(prev => ({ ...prev, currentPage: Math.min(prev.totalPages - 1, prev.currentPage + 1) }));
+    setState((prev) => {
+      const totalPages = Math.ceil(prev.categories.length / prev.itemsPerPage);
+      return {
+        ...prev,
+        currentPage: Math.min(totalPages - 1, prev.currentPage + 1),
+      };
+    });
   };
 
   return {
