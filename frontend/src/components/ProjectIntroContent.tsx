@@ -257,11 +257,8 @@ export const ProjectIntroContent: React.FC<ProjectIntroContentProps> = ({
             ) : introduce?.content ? (
               /* 저장된 내용이 있으면 표시 */
               <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-                <div className="prose prose-lg max-w-none">
-                  <div
-                    className="text-gray-800 leading-relaxed font-['system-ui','Segoe_UI','Roboto','Helvetica_Neue','Arial','Noto_Sans','sans-serif'] text-[15px] tracking-wide"
-                    style={{ lineHeight: "1.8" }}
-                  >
+                <div className="max-w-none">
+                  <div className="text-gray-700 leading-relaxed">
                     <ReactMarkdown
                       components={{
                         h1: ({ children }) => (
