@@ -2,6 +2,7 @@ package com.port.folio.domain.post.entity;
 
 import com.port.folio.domain.category.entity.Category;
 import com.port.folio.global.Jpa.BaseEntity;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToOne;
 import lombok.Getter;
@@ -17,6 +18,7 @@ import lombok.experimental.SuperBuilder;
 public class Introduce extends BaseEntity {
 
     private String title;
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @OneToOne

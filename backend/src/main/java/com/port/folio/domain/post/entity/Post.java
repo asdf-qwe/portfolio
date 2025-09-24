@@ -15,6 +15,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public class Post extends BaseEntity {
 
+    @Column(columnDefinition = "TEXT")
     private String content;
     private String imageUrl;
     private int views = 0;

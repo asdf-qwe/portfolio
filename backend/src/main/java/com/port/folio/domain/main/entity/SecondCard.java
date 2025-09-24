@@ -15,6 +15,7 @@ import lombok.experimental.SuperBuilder;
 public class SecondCard extends BaseEntity {
     private String title;
     private String subTitle;
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @Enumerated(EnumType.STRING)

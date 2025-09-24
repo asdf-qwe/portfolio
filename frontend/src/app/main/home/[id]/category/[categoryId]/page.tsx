@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import ProjectHeader from "@/components/ProjectHeader";
 import {
@@ -29,6 +29,8 @@ import {
   FileResource,
 } from "@/features/upload/service/uploadService";
 import FileUpload from "@/features/upload/components/FileUpload";
+import ReactMarkdown from "react-markdown";
+import MDEditor from "@uiw/react-md-editor";
 
 // 상수 정의
 const CONSTANTS = {
@@ -116,6 +118,149 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const [newTabName, setNewTabName] = useState("");
   const [isAddingTab, setIsAddingTab] = useState(false);
 
+  // 슬래시 메뉴 옵션들
+  const slashMenuOptions = [
+    { label: "제목 1", value: "# ", icon: "H1" },
+    { label: "제목 2", value: "## ", icon: "H2" },
+    { label: "제목 3", value: "### ", icon: "H3" },
+    { label: "굵은 글씨", value: "**텍스트**", icon: "B" },
+    { label: "기울임 글씨", value: "*텍스트*", icon: "I" },
+    { label: "목록", value: "- ", icon: "•" },
+    { label: "번호 목록", value: "1. ", icon: "1." },
+    { label: "코드 블록", value: "```\n코드\n```", icon: "</>" },
+    { label: "인라인 코드", value: "`코드`", icon: "`" },
+    { label: "링크", value: "[링크 텍스트](URL)", icon: "🔗" },
+  ];
+
+  // 에디터 ref들
+  const introEditorRef = useRef<HTMLDivElement | null>(null);
+  const tabEditorRef = useRef<HTMLDivElement | null>(null);
+
+  // 슬래시 명령어 드롭다운 상태
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const [slashMenuPosition, setSlashMenuPosition] = useState({
+    top: 0,
+    left: 0,
+  });
+  const [currentEditor, setCurrentEditor] = useState<"intro" | "tab" | null>(
+    null
+  );
+  const [previousContent, setPreviousContent] = useState("");
+
+  // 슬래시 메뉴 핸들러 함수들
+  const handleSlashMenuSelect = (
+    option: (typeof slashMenuOptions)[0],
+    editorType: "intro" | "tab"
+  ) => {
+    if (editorType === "intro" && introduce) {
+      // 프로젝트 소개 에디터용 - "/"를 선택된 옵션으로 교체
+      const currentContent = introduce.content || "";
+      const lastSlashIndex = currentContent.lastIndexOf("/");
+      if (lastSlashIndex !== -1) {
+        const newContent =
+          currentContent.substring(0, lastSlashIndex) +
+          option.value +
+          currentContent.substring(lastSlashIndex + 1);
+        setIntroduce((prev) =>
+          prev ? { ...prev, content: newContent } : null
+        );
+        setPreviousContent(newContent);
+        // 선택 후 에디터에 포커스 - 교체 위치 바로 다음으로 커서 이동
+        const cursorPosition = lastSlashIndex + option.value.length;
+        setTimeout(
+          (cursorPos) => {
+            const textareas = document.querySelectorAll("textarea");
+            // 현재 에디터 타입에 맞는 textarea 찾기
+            for (const textarea of textareas) {
+              if (textarea.offsetParent !== null) {
+                // visible textarea
+                textarea.focus();
+                textarea.setSelectionRange(cursorPos, cursorPos);
+                break;
+              }
+            }
+          },
+          100,
+          cursorPosition
+        );
+      }
+    } else if (editorType === "tab") {
+      // 탭 게시글 에디터용 - "/"를 선택된 옵션으로 교체
+      const lastSlashIndex = postContent.lastIndexOf("/");
+      if (lastSlashIndex !== -1) {
+        const newContent =
+          postContent.substring(0, lastSlashIndex) +
+          option.value +
+          postContent.substring(lastSlashIndex + 1);
+        setPostContent(newContent);
+        setPreviousContent(newContent);
+        // 선택 후 에디터에 포커스 - 교체 위치 바로 다음으로 커서 이동
+        const cursorPosition = lastSlashIndex + option.value.length;
+        setTimeout(
+          (cursorPos) => {
+            const textareas = document.querySelectorAll("textarea");
+            // 현재 에디터 타입에 맞는 textarea 찾기
+            for (const textarea of textareas) {
+              if (textarea.offsetParent !== null) {
+                // visible textarea
+                textarea.focus();
+                textarea.setSelectionRange(cursorPos, cursorPos);
+                break;
+              }
+            }
+          },
+          100,
+          cursorPosition
+        );
+      }
+    }
+    setShowSlashMenu(false);
+  };
+
+  const handleEditorChange = (
+    value: string | undefined,
+    editorType: "intro" | "tab"
+  ) => {
+    const content = value || "";
+
+    // 슬래시 입력 감지 - content에 "/"가 처음 나타날 때
+    if (
+      content.includes("/") &&
+      !previousContent.includes("/") &&
+      !showSlashMenu
+    ) {
+      // 커서 위치 계산 (간단한 구현)
+      const textarea = document.activeElement as HTMLTextAreaElement;
+      if (textarea) {
+        const rect = textarea.getBoundingClientRect();
+        setSlashMenuPosition({
+          top: rect.top + rect.height + 5,
+          left: rect.left,
+        });
+        setCurrentEditor(editorType);
+        setShowSlashMenu(true);
+      }
+    } else if (!content.includes("/") && showSlashMenu) {
+      setShowSlashMenu(false);
+    }
+
+    // previousContent 업데이트
+    setPreviousContent(content);
+
+    // 기존 onChange 로직
+    if (editorType === "intro") {
+      setIntroduce((prev) =>
+        prev
+          ? { ...prev, content }
+          : {
+              title: category?.categoryTitle || `카테고리 ${categoryId}`,
+              content,
+            }
+      );
+    } else if (editorType === "tab") {
+      setPostContent(content);
+    }
+  };
   // 탭별 게시글 관련 상태
   const [tabPosts, setTabPosts] = useState<{
     [tabId: string]: PostResponse | null;
@@ -466,12 +611,15 @@ export default function CategoryPage({ params }: CategoryPageProps) {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 내용
               </label>
-              <textarea
+              <MDEditor
+                ref={tabEditorRef}
                 value={postContent}
-                onChange={(e) => setPostContent(e.target.value)}
-                rows={10}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-                placeholder="게시글 내용을 입력하세요"
+                onChange={(value) => handleEditorChange(value, "tab")}
+                preview="edit"
+                hideToolbar={false}
+                visibleDragbar={false}
+                className="border border-gray-300 rounded-lg"
+                height={300}
               />
             </div>
 
@@ -499,12 +647,62 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       return (
         <div className="max-w-none">
           <div className="prose prose-lg max-w-none">
-            <div
-              className="text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{
-                __html: parseLinks(post?.content || "내용이 없습니다."),
-              }}
-            />
+            <div className="text-gray-700 leading-relaxed">
+              <ReactMarkdown
+                components={{
+                  h1: ({ children }) => (
+                    <h1 className="text-2xl font-bold mt-6 mb-4 text-gray-900">
+                      {children}
+                    </h1>
+                  ),
+                  h2: ({ children }) => (
+                    <h2 className="text-xl font-semibold mt-5 mb-3 text-gray-800">
+                      {children}
+                    </h2>
+                  ),
+                  h3: ({ children }) => (
+                    <h3 className="text-lg font-medium mt-4 mb-2 text-gray-800">
+                      {children}
+                    </h3>
+                  ),
+                  p: ({ children }) => (
+                    <p className="mb-4 text-gray-700 leading-relaxed">
+                      {children}
+                    </p>
+                  ),
+                  ul: ({ children }) => (
+                    <ul className="list-disc list-inside mb-4 space-y-1 text-gray-700">
+                      {children}
+                    </ul>
+                  ),
+                  ol: ({ children }) => (
+                    <ol className="list-decimal list-inside mb-4 space-y-1 text-gray-700">
+                      {children}
+                    </ol>
+                  ),
+                  li: ({ children }) => (
+                    <li className="text-gray-700">{children}</li>
+                  ),
+                  strong: ({ children }) => (
+                    <strong className="font-semibold text-gray-900">
+                      {children}
+                    </strong>
+                  ),
+                  code: ({ children }) => (
+                    <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-gray-800">
+                      {children}
+                    </code>
+                  ),
+                  pre: ({ children }) => (
+                    <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-4 text-sm font-mono text-gray-800">
+                      {children}
+                    </pre>
+                  ),
+                }}
+              >
+                {post?.content || "내용이 없습니다."}
+              </ReactMarkdown>
+            </div>
           </div>
         </div>
       );
@@ -909,22 +1107,17 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             프로젝트 소개 내용 (마크다운 지원)
                           </label>
-                          <textarea
+                          <MDEditor
+                            ref={introEditorRef}
                             value={introduce?.content || ""}
-                            onChange={(e) =>
-                              setIntroduce((prev) =>
-                                prev
-                                  ? { ...prev, content: e.target.value }
-                                  : {
-                                      title:
-                                        category?.categoryTitle ||
-                                        `카테고리 ${categoryId}`,
-                                      content: e.target.value,
-                                    }
-                              )
+                            onChange={(value) =>
+                              handleEditorChange(value, "intro")
                             }
-                            className="w-full h-80 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm resize-none"
-                            placeholder="마크다운 형식으로 프로젝트 소개를 작성해주세요..."
+                            preview="edit"
+                            hideToolbar={false}
+                            visibleDragbar={false}
+                            className="border border-gray-300 rounded-lg"
+                            height={320}
                           />
                         </div>
                         <div className="bg-gray-50 p-3 rounded-lg">
@@ -1056,10 +1249,65 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                           <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
                             <div className="prose prose-lg max-w-none">
                               <div
-                                className="whitespace-pre-wrap text-gray-800 leading-relaxed font-['system-ui','Segoe_UI','Roboto','Helvetica_Neue','Arial','Noto_Sans','sans-serif'] text-[15px] tracking-wide"
+                                className="text-gray-800 leading-relaxed font-['system-ui','Segoe_UI','Roboto','Helvetica_Neue','Arial','Noto_Sans','sans-serif'] text-[15px] tracking-wide"
                                 style={{ lineHeight: "1.8" }}
                               >
-                                {introduce.content}
+                                <ReactMarkdown
+                                  components={{
+                                    h1: ({ children }) => (
+                                      <h1 className="text-2xl font-bold mt-6 mb-4 text-gray-900">
+                                        {children}
+                                      </h1>
+                                    ),
+                                    h2: ({ children }) => (
+                                      <h2 className="text-xl font-semibold mt-5 mb-3 text-gray-800">
+                                        {children}
+                                      </h2>
+                                    ),
+                                    h3: ({ children }) => (
+                                      <h3 className="text-lg font-medium mt-4 mb-2 text-gray-800">
+                                        {children}
+                                      </h3>
+                                    ),
+                                    p: ({ children }) => (
+                                      <p className="mb-4 text-gray-700 leading-relaxed">
+                                        {children}
+                                      </p>
+                                    ),
+                                    ul: ({ children }) => (
+                                      <ul className="list-disc list-inside mb-4 space-y-1 text-gray-700">
+                                        {children}
+                                      </ul>
+                                    ),
+                                    ol: ({ children }) => (
+                                      <ol className="list-decimal list-inside mb-4 space-y-1 text-gray-700">
+                                        {children}
+                                      </ol>
+                                    ),
+                                    li: ({ children }) => (
+                                      <li className="text-gray-700">
+                                        {children}
+                                      </li>
+                                    ),
+                                    strong: ({ children }) => (
+                                      <strong className="font-semibold text-gray-900">
+                                        {children}
+                                      </strong>
+                                    ),
+                                    code: ({ children }) => (
+                                      <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-gray-800">
+                                        {children}
+                                      </code>
+                                    ),
+                                    pre: ({ children }) => (
+                                      <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-4 text-sm font-mono text-gray-800">
+                                        {children}
+                                      </pre>
+                                    ),
+                                  }}
+                                >
+                                  {introduce.content}
+                                </ReactMarkdown>
                               </div>
                             </div>
                           </div>
@@ -1422,6 +1670,32 @@ export default function CategoryPage({ params }: CategoryPageProps) {
           </div>
         </div>
       </main>
+
+      {/* 슬래시 메뉴 드롭다운 */}
+      {showSlashMenu && (
+        <div
+          className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg py-2 min-w-48"
+          style={{
+            top: slashMenuPosition.top,
+            left: slashMenuPosition.left,
+          }}
+        >
+          {slashMenuOptions.map((option, index) => (
+            <button
+              key={index}
+              onClick={() =>
+                handleSlashMenuSelect(option, currentEditor || "intro")
+              }
+              className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm"
+            >
+              <span className="font-mono text-gray-600 min-w-8">
+                {option.icon}
+              </span>
+              <span className="text-gray-700">{option.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </>
   );
 }
