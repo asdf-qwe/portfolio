@@ -1,15 +1,21 @@
 import { TabRes } from "@/features/tab/types/tab";
 import { slashMenuOptions } from "@/constants/slashMenuOptions";
 import { autoLinkUrls } from "@/utils/categoryUtils";
+import { IntroduceResponse } from "@/features/main/type/introduce";
+import { CategoryResponse } from "@/features/category/types/category";
+import { PostResponse } from "@/features/post/types/post";
+import { categoryService } from "@/features/category/service/categoryService";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { Dispatch, SetStateAction } from "react";
 
 export interface CategoryPageHandlersProps {
   // 상태들
-  introduce: any;
-  setIntroduce: (value: any) => void;
+  introduce: IntroduceResponse | null;
+  setIntroduce: Dispatch<SetStateAction<IntroduceResponse | null>>;
   postContent: string;
   setPostContent: (value: string) => void;
-  setCategory: (value: any) => void;
-  category: any;
+  setCategory: Dispatch<SetStateAction<CategoryResponse | null>>;
+  category: CategoryResponse | null;
   categoryId: string;
   canEdit: boolean | null;
   isEditMode: boolean;
@@ -30,15 +36,15 @@ export interface CategoryPageHandlersProps {
   // 훅에서 가져온 함수들
   saveIntroduce: (title: string, content: string) => Promise<void>;
   editingTab: string | null;
-  tabPosts: any;
+  tabPosts: { [tabId: string]: PostResponse | null };
   startEditingTabPost: (tabId: string) => void;
   saveTabPost: () => Promise<void>;
   cancelEditingTabPost: () => void;
   isSavingPost: boolean;
 
   // 서비스 함수들
-  categoryService: any;
-  router: any;
+  categoryService: typeof categoryService;
+  router: AppRouterInstance;
   userId: string;
 }
 
@@ -94,7 +100,7 @@ export const createCategoryPageHandlers = (
           currentContent.substring(0, lastSlashIndex) +
           option.value +
           currentContent.substring(lastSlashIndex + 1);
-        setIntroduce((prev: any) =>
+        setIntroduce((prev: IntroduceResponse | null) =>
           prev ? { ...prev, content: newContent } : null
         );
         setPreviousContent(newContent);
@@ -181,7 +187,7 @@ export const createCategoryPageHandlers = (
 
     // 기존 onChange 로직
     if (editorType === "intro") {
-      setIntroduce((prev: any) =>
+      setIntroduce((prev: IntroduceResponse | null) =>
         prev
           ? { ...prev, content }
           : {
@@ -231,7 +237,7 @@ export const createCategoryPageHandlers = (
         editCategoryTitle.trim() &&
         editCategoryTitle !== category?.categoryTitle
       ) {
-        setCategory((prev: any) =>
+        setCategory((prev: CategoryResponse | null) =>
           prev ? { ...prev, categoryTitle: editCategoryTitle } : null
         );
       }

@@ -2,15 +2,31 @@ import React from "react";
 import MDEditor from "@uiw/react-md-editor";
 import ReactMarkdown from "react-markdown";
 import { autoLinkUrls } from "@/utils/categoryUtils";
+import { IntroduceResponse } from "@/features/main/type/introduce";
+import { CategoryResponse } from "@/features/category/types/category";
+
+interface CategoryPageHandlers {
+  handleSlashMenuSelect: (
+    option: { label: string; value: string; icon: string },
+    editorType: "intro" | "tab"
+  ) => void;
+  handleEditorChange: (
+    value: string | undefined,
+    editorType: "intro" | "tab"
+  ) => void;
+  toggleEditMode: () => void;
+  handleSave: () => Promise<void>;
+  handleDeleteCategory: () => Promise<void>;
+}
 
 interface ProjectIntroContentProps {
   canEdit: boolean | null;
   isEditMode: boolean;
   setIsEditMode: (value: boolean) => void;
   isSaving: boolean;
-  handlers: any;
-  introduce: any;
-  category: any;
+  handlers: CategoryPageHandlers;
+  introduce: IntroduceResponse | null;
+  category: CategoryResponse | null;
   categoryId: string;
   editCategoryTitle: string;
   setEditCategoryTitle: (value: string) => void;
@@ -19,8 +35,8 @@ interface ProjectIntroContentProps {
   isVideoLoading: boolean;
   handleMainVideoUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   isUploadingVideo: boolean;
-  tabEditorRef: React.RefObject<any>;
-  introEditorRef: React.RefObject<any>;
+  tabEditorRef: React.RefObject<HTMLDivElement | null>;
+  introEditorRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export const ProjectIntroContent: React.FC<ProjectIntroContentProps> = ({

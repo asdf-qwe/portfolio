@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { tabService } from "@/features/tab/service/tabService";
 import { TabRes } from "@/features/tab/types/tab";
+import { CategoryResponse } from "@/features/category/types/category";
 import {
   getPostByTab,
   updatePost,
@@ -8,7 +9,7 @@ import {
 } from "@/features/post/service/postService";
 import { PostResponse } from "@/features/post/types/post";
 
-export const useTabs = (categoryId: string, category: any) => {
+export const useTabs = (categoryId: string, category: CategoryResponse | null) => {
   const [tabs, setTabs] = useState<TabRes[]>([]);
   const [tabsLoading, setTabsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string | null>(null);

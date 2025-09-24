@@ -2,12 +2,13 @@ import React from "react";
 import FileUpload from "@/features/upload/components/FileUpload";
 import { isImageFile, formatFileSize, formatDate } from "@/utils/categoryUtils";
 import { CONSTANTS } from "@/utils/constants";
+import { FileResource } from "@/features/upload/service/uploadService";
 
 interface ResourcesContentProps {
   canEdit: boolean | null;
   handleUploadSuccess: (url: string, fileName: string) => void;
   isResourcesLoading: boolean;
-  resources: any[];
+  resources: FileResource[];
   handleDeleteResource: (id: string) => Promise<void>;
   categoryId: string;
 }

@@ -2,12 +2,13 @@ import React from "react";
 import MDEditor from "@uiw/react-md-editor";
 import ReactMarkdown from "react-markdown";
 import { TabRes } from "@/features/tab/types/tab";
+import { PostResponse } from "@/features/post/types/post";
 import { autoLinkUrls } from "@/utils/categoryUtils";
 
 interface TabPostContentProps {
   tab: TabRes;
   editingTab: string | null;
-  tabPosts: any;
+  tabPosts: { [tabId: string]: PostResponse | null };
   postContent: string;
   handleEditorChange: (
     value: string | undefined,
