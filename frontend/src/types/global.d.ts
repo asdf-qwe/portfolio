@@ -149,67 +149,33 @@ interface KakaoGeocoderResult {
   }>;
 }
 
-interface KakaoGeocoder {
-  addressSearch(
-    address: string,
-    callback: (
-      result: KakaoGeocoderResult["documents"],
-      status: string
-    ) => void,
-    options?: {
-      analyze_type?: "similar" | "exact";
-      page?: number;
-      size?: number;
-    }
-  ): void;
-  coord2Address(
-    x: number,
-    y: number,
-    callback: (
-      result: KakaoGeocoderResult["documents"],
-      status: string
-    ) => void,
-    options?: {
-      input_coord?: string;
-    }
-  ): void;
-  coord2RegionCode(
-    x: number,
-    y: number,
-    callback: (
-      result: Array<{
-        region_type: string;
-        address_name: string;
-        region_1depth_name: string;
-        region_2depth_name: string;
-        region_3depth_name: string;
-        region_4depth_name: string;
-        code: string;
-        x: number;
-        y: number;
-      }>,
-      status: string
-    ) => void,
-    options?: {
-      input_coord?: string;
-      output_coord?: string;
-    }
-  ): void;
-  transCoord(
-    x: number,
-    y: number,
-    callback: (
-      result: Array<{
-        x: number;
-        y: number;
-      }>,
-      status: string
-    ) => void,
-    options: {
-      input_coord: string;
-      output_coord: string;
-    }
-  ): void;
+interface KakaoMarkerImage {
+  src: string;
+  size: {
+    width: number;
+    height: number;
+  };
+  options?: {
+    alt?: string;
+    coords?: string;
+    shape?: string;
+    spriteOrigin?: {
+      x: number;
+      y: number;
+    };
+    spriteSize?: {
+      width: number;
+      height: number;
+    };
+    offset?: {
+      x: number;
+      y: number;
+    };
+    anchor?: {
+      x: number;
+      y: number;
+    };
+  };
 }
 
 declare global {
@@ -239,8 +205,7 @@ declare global {
         Marker: new (options: {
           map?: KakaoMap;
           position: KakaoLatLng;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          image?: any; // Kakao Maps marker image object
+          image?: KakaoMarkerImage; // Kakao Maps marker image object
           title?: string;
           clickable?: boolean;
           draggable?: boolean;
@@ -277,11 +242,11 @@ declare global {
           LEFT: string;
           RIGHT: string;
         };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        [key: string]: any; // Kakao Maps SDK의 동적 속성들을 위한 인덱스 시그니처
+        // Kakao Maps SDK의 동적 속성들을 위한 인덱스 시그니처
+        [key: string]: unknown;
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      [key: string]: any; // Kakao 객체의 추가 속성들을 위한 인덱스 시그니처
+      // Kakao 객체의 추가 속성들을 위한 인덱스 시그니처
+      [key: string]: unknown;
     };
   }
 }
