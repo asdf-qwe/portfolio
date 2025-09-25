@@ -233,7 +233,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                     </div>
                   </div>
 
-                  <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
+                  <p className="text-lg md:text-xl text-gray-600 leading-relaxed whitespace-pre-wrap">
                     {mainData?.introduce ||
                       "새로운 기술을 배우고 적용할 때 신기해 하고 좋아하며, 사용자 경험을 개선하는 데 열정을 가지고 있습니다."}
                   </p>
