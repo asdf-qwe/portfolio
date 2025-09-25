@@ -77,7 +77,14 @@ export const useTabs = (
   };
 
   const startEditingTabPost = async (tabId: string) => {
-    const existingPost = tabPosts[parseInt(tabId)];
+    const tabIdNum = parseInt(tabId);
+
+    // 해당 탭의 게시글이 아직 로드되지 않았다면 먼저 로드
+    if (!(tabIdNum in tabPosts)) {
+      await fetchTabPost(tabIdNum);
+    }
+
+    const existingPost = tabPosts[tabIdNum];
     if (existingPost && existingPost.content && existingPost.content.trim()) {
       setPostContent(existingPost.content);
     } else {
@@ -93,20 +100,15 @@ export const useTabs = (
       setIsSavingPost(true);
       const postData = { content: postContent, imageUrl: "" };
       const tabId = parseInt(editingTab);
-      const existingPost = tabPosts[tabId];
 
-      // 내용이 비어있으면 저장하지 않음
-      if (!postContent.trim()) {
-        await fetchTabPost(tabId);
-        setEditingTab(null);
-        setPostContent("");
-        return;
-      }
+      // 백엔드에서 직접 게시글 존재 여부 확인
+      const existingPostFromServer = await getPostByTab(tabId);
 
-      if (existingPost) {
-        await updatePost(postData, tabId);
-      } else {
+      // 게시글이 존재하지 않으면 생성, 존재하면 수정
+      if (!existingPostFromServer) {
         await createPost(postData, parseInt(categoryId), tabId);
+      } else {
+        await updatePost(postData, tabId);
       }
 
       await fetchTabPost(tabId);

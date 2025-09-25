@@ -143,12 +143,15 @@ export async function getPostByTab(
 
     const post = await response.json();
 
-    // 데이터가 없거나 content가 비어있는 경우 빈 게시글로 처리
-    if (!post) {
+    // 백엔드에서 게시글이 없을 때 new PostResponse(null, null)을 반환하므로
+    // content와 imageUrl이 모두 null인 경우에만 게시글이 없는 것으로 처리
+    // 빈 문자열인 경우에는 게시글이 존재한다고 간주
+    if (post.content === null && post.imageUrl === null) {
+      console.log(`탭 ${tabId}에 게시글이 없습니다.`);
       return null;
     }
 
-    // content가 비어있어도 게시글 객체는 반환 (빈 게시글로 표시)
+    // 유효한 게시글이 있으면 반환
     return post;
   } catch (error) {
     console.error(`탭 게시글 조회 실패 - tabId: ${tabId}`, error);
