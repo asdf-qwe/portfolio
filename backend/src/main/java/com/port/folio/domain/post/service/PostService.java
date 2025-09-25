@@ -76,7 +76,7 @@ public class PostService {
 
     public void createIntroduce(CreateIntroduce req, Long categoryId){
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(()-> new IllegalArgumentException("카테고리가 없습니다."));
+                .orElseThrow(()-> new IllegalArgumentException("카테고리가 없습니다.test"));
 
         Introduce introduce = Introduce.builder()
                 .title(req.getTitle())
