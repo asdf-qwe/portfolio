@@ -4,6 +4,7 @@ import com.port.folio.domain.category.entity.Category;
 import com.port.folio.global.Jpa.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Lob;
 import jakarta.persistence.OneToOne;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,8 @@ import lombok.experimental.SuperBuilder;
 public class Introduce extends BaseEntity {
 
     private String title;
+
+    @Lob
     @Column(columnDefinition = "TEXT")
     private String content;
 
