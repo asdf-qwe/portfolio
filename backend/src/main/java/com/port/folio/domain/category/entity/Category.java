@@ -26,7 +26,7 @@ public class Category extends BaseEntity {
     private String categoryTitle;
 
     @OneToMany(mappedBy = "category",cascade = CascadeType.REMOVE)
-    private List<Post> posts;
+    private List<Post> post;
 
     private Long userId;
 

@@ -74,6 +74,10 @@ class CardService {
       );
 
       if (!response.ok) {
+        // 500 에러는 데이터가 없는 정상적인 상황으로 처리
+        if (response.status === 500) {
+          return null;
+        }
         console.log(
           `getFirst: ${categoryName} 카테고리에 데이터가 없습니다 (${response.status})`
         );
@@ -154,6 +158,10 @@ class CardService {
       );
 
       if (!response.ok) {
+        // 500 에러는 데이터가 없는 정상적인 상황으로 처리
+        if (response.status === 500) {
+          return null;
+        }
         console.log(
           `getSecond: ${categoryName} 카테고리에 데이터가 없습니다 (${response.status})`
         );

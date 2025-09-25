@@ -86,10 +86,15 @@ public class MainService {
         firstCardRepository.save(firstCard);
     }
 
-    public CardResponse getFirst(CategoryName categoryName, Long skillId){
-        FirstCard firstCard = firstCardRepository.findBySkillCategory_IdAndCategoryName(skillId, categoryName)
-                .orElseThrow(()-> new IllegalArgumentException("카테고리 없음"));
-        return new CardResponse(firstCard.getTitle(), firstCard.getSubTitle(), firstCard.getContent(),firstCard.getCategoryName());
+    public CardResponse getFirst(CategoryName categoryName, Long skillId) {
+        return firstCardRepository.findBySkillCategory_IdAndCategoryName(skillId, categoryName)
+                .map(fc -> new CardResponse(
+                        fc.getTitle(),
+                        fc.getSubTitle(),
+                        fc.getContent(),
+                        fc.getCategoryName()
+                ))
+                .orElse(null); // 못 찾으면 null
     }
 
     public void createSecond(CardDto req, Long skillId){
@@ -117,8 +122,13 @@ public class MainService {
     }
 
     public CardResponse getSecond(Long skillId, CategoryName categoryName){
-        SecondCard secondCard = secondCardRepository.findBySkillCategory_IdAndCategoryName(skillId, categoryName)
-                .orElseThrow(()-> new IllegalArgumentException("카테고리 없음"));
-        return new CardResponse(secondCard.getTitle(), secondCard.getSubTitle(), secondCard.getContent(),secondCard.getCategoryName());
+        return secondCardRepository.findBySkillCategory_IdAndCategoryName(skillId, categoryName)
+                .map(fc -> new CardResponse(
+                        fc.getTitle(),
+                        fc.getSubTitle(),
+                        fc.getContent(),
+                        fc.getCategoryName()
+                ))
+                .orElse(null); // 못 찾으면 null
     }
 }

@@ -221,7 +221,7 @@ export default function HomePage({ params }: HomePageProps) {
         isGlobalEditMode={state.isGlobalEditMode}
         isSavingMain={state.isSavingMain}
         onToggleEditMode={toggleGlobalEditMode}
-        onLogout={actions.handleLogout}
+        onLogout={logout}
       />
 
       {/* Hero Section */}

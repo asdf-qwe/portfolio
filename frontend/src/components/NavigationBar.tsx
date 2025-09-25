@@ -1,5 +1,6 @@
 import Link from "next/link";
 import React from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import Button from "@/features/auth/components/Button";
 
@@ -21,6 +22,7 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
   onLogout,
 }) => {
   const { isLoggedIn, user, isLoading } = useAuth();
+  const router = useRouter();
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md shadow-lg border-b border-gray-100 z-50">
@@ -116,7 +118,10 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={onLogout}
+                  onClick={async () => {
+                    await onLogout();
+                    router.push("/");
+                  }}
                   isLoading={isLoading}
                   className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                 >

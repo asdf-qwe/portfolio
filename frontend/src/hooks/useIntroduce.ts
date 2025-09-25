@@ -52,6 +52,11 @@ export const useIntroduce = (
 
   const saveIntroduce = async (title: string, content: string) => {
     try {
+      // 내용이 비어있으면 저장하지 않음
+      if (!content.trim()) {
+        return;
+      }
+
       if (introduceExists) {
         await updateIntroduce({ title, content }, parseInt(categoryId));
       } else {

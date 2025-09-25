@@ -254,70 +254,76 @@ export const ProjectIntroContent: React.FC<ProjectIntroContentProps> = ({
                   <div className="h-4 bg-gray-200 rounded w-2/3"></div>
                 </div>
               </div>
-            ) : introduce?.content ? (
-              /* 저장된 내용이 있으면 표시 */
+            ) : introduce ? (
+              /* introduce 데이터가 있으면 표시 (빈 content라도 빈 게시글로 표시) */
               <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
                 <div className="max-w-none">
                   <div className="text-gray-700 leading-relaxed">
-                    <ReactMarkdown
-                      components={{
-                        h1: ({ children }) => (
-                          <h1 className="text-2xl font-bold mt-6 mb-4 text-gray-900">
-                            {children}
-                          </h1>
-                        ),
-                        h2: ({ children }) => (
-                          <h2 className="text-xl font-semibold mt-5 mb-3 text-gray-800">
-                            {children}
-                          </h2>
-                        ),
-                        h3: ({ children }) => (
-                          <h3 className="text-lg font-medium mt-4 mb-2 text-gray-800">
-                            {children}
-                          </h3>
-                        ),
-                        p: ({ children }) => (
-                          <p className="mb-4 text-gray-700 leading-relaxed font-medium">
-                            {children}
-                          </p>
-                        ),
-                        ul: ({ children }) => (
-                          <ul className="list-disc list-inside mb-4 space-y-1 text-gray-700">
-                            {children}
-                          </ul>
-                        ),
-                        ol: ({ children }) => (
-                          <ol className="list-decimal list-inside mb-4 space-y-1 text-gray-700">
-                            {children}
-                          </ol>
-                        ),
-                        li: ({ children }) => (
-                          <li className="text-gray-700">{children}</li>
-                        ),
-                        strong: ({ children }) => (
-                          <strong className="font-semibold text-gray-900">
-                            {children}
-                          </strong>
-                        ),
-                        code: ({ children }) => (
-                          <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-gray-800">
-                            {children}
-                          </code>
-                        ),
-                        pre: ({ children }) => (
-                          <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-4 text-sm font-mono text-gray-800">
-                            {children}
-                          </pre>
-                        ),
-                      }}
-                    >
-                      {autoLinkUrls(introduce.content)}
-                    </ReactMarkdown>
+                    {introduce.content && introduce.content.trim() ? (
+                      <ReactMarkdown
+                        components={{
+                          h1: ({ children }) => (
+                            <h1 className="text-2xl font-bold mt-6 mb-4 text-gray-900">
+                              {children}
+                            </h1>
+                          ),
+                          h2: ({ children }) => (
+                            <h2 className="text-xl font-semibold mt-5 mb-3 text-gray-800">
+                              {children}
+                            </h2>
+                          ),
+                          h3: ({ children }) => (
+                            <h3 className="text-lg font-medium mt-4 mb-2 text-gray-800">
+                              {children}
+                            </h3>
+                          ),
+                          p: ({ children }) => (
+                            <p className="mb-4 text-gray-700 leading-relaxed font-medium">
+                              {children}
+                            </p>
+                          ),
+                          ul: ({ children }) => (
+                            <ul className="list-disc list-inside mb-4 space-y-1 text-gray-700">
+                              {children}
+                            </ul>
+                          ),
+                          ol: ({ children }) => (
+                            <ol className="list-decimal list-inside mb-4 space-y-1 text-gray-700">
+                              {children}
+                            </ol>
+                          ),
+                          li: ({ children }) => (
+                            <li className="text-gray-700">{children}</li>
+                          ),
+                          strong: ({ children }) => (
+                            <strong className="font-semibold text-gray-900">
+                              {children}
+                            </strong>
+                          ),
+                          code: ({ children }) => (
+                            <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-gray-800">
+                              {children}
+                            </code>
+                          ),
+                          pre: ({ children }) => (
+                            <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-4 text-sm font-mono text-gray-800">
+                              {children}
+                            </pre>
+                          ),
+                        }}
+                      >
+                        {autoLinkUrls(introduce.content)}
+                      </ReactMarkdown>
+                    ) : (
+                      <div className="text-gray-500 italic text-center py-8">
+                        빈 게시글입니다. 편집 버튼을 눌러 내용을 작성해주세요.
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             ) : (
-              /* 저장된 내용이 없으면 빈 상태 표시 */
+              /* introduce 데이터가 없으면 빈 상태 표시 */
               <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
                 <div className="max-w-xs mx-auto">
                   <svg

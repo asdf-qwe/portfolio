@@ -95,6 +95,14 @@ export const useTabs = (
       const tabId = parseInt(editingTab);
       const existingPost = tabPosts[tabId];
 
+      // 내용이 비어있으면 저장하지 않음
+      if (!postContent.trim()) {
+        await fetchTabPost(tabId);
+        setEditingTab(null);
+        setPostContent("");
+        return;
+      }
+
       if (existingPost) {
         await updatePost(postData, tabId);
       } else {

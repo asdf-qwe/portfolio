@@ -32,6 +32,7 @@ export const TabPostContent: React.FC<TabPostContentProps> = ({
   const tabId = tab.id.toString();
   const post = tabPosts[tab.id];
   const hasContent = post && post.content && post.content.trim();
+  const hasPost = post !== null && post !== undefined;
 
   if (editingTab === tabId) {
     return (
@@ -143,6 +144,19 @@ export const TabPostContent: React.FC<TabPostContentProps> = ({
             >
               {autoLinkUrls(post?.content || "내용이 없습니다.")}
             </ReactMarkdown>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasPost) {
+    // 게시글은 있지만 내용이 빈 경우
+    return (
+      <div className="max-w-none">
+        <div className="prose prose-lg max-w-none">
+          <div className="text-gray-500 italic text-center py-8">
+            빈 게시글입니다. 편집 버튼을 눌러 내용을 작성해주세요.
           </div>
         </div>
       </div>

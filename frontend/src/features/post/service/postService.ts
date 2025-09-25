@@ -143,11 +143,12 @@ export async function getPostByTab(
 
     const post = await response.json();
 
-    // 데이터가 없거나 content가 비어있는 경우 null 반환
-    if (!post || !post.content || post.content.trim() === "") {
+    // 데이터가 없거나 content가 비어있는 경우 빈 게시글로 처리
+    if (!post) {
       return null;
     }
 
+    // content가 비어있어도 게시글 객체는 반환 (빈 게시글로 표시)
     return post;
   } catch (error) {
     console.error(`탭 게시글 조회 실패 - tabId: ${tabId}`, error);
@@ -288,6 +289,8 @@ export async function getIntroduce(
     }
 
     const data = await response.json();
+
+    // 데이터가 있으면 반환 (빈 content라도 빈 게시글로 표시)
     return data;
   } catch (error) {
     // 네트워크 에러인 경우 null 반환
