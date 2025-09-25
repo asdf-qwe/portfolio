@@ -17,6 +17,7 @@ public class FirstCard extends BaseEntity {
 
     private String title;
     private String subTitle;
+    @Lob
     @Column(columnDefinition = "TEXT")
     private String content;
 

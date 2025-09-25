@@ -9,7 +9,10 @@ import {
 } from "@/features/post/service/postService";
 import { PostResponse } from "@/features/post/types/post";
 
-export const useTabs = (categoryId: string, category: CategoryResponse | null) => {
+export const useTabs = (
+  categoryId: string,
+  category: CategoryResponse | null
+) => {
   const [tabs, setTabs] = useState<TabRes[]>([]);
   const [tabsLoading, setTabsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -114,6 +117,22 @@ export const useTabs = (categoryId: string, category: CategoryResponse | null) =
     setPostContent("");
   };
 
+  const handleDeleteTab = async (tabId: number) => {
+    if (!confirm("정말로 이 탭을 삭제하시겠습니까?")) return;
+
+    try {
+      await tabService.deleteTab(tabId);
+      await fetchTabs();
+      // 삭제된 탭이 현재 활성 탭이면 기본 탭으로 변경
+      if (activeTab === tabId.toString()) {
+        setActiveTab("intro");
+      }
+    } catch (error) {
+      console.error("탭 삭제 실패:", error);
+      alert("탭 삭제에 실패했습니다.");
+    }
+  };
+
   useEffect(() => {
     if (categoryId && category) {
       fetchTabs();
@@ -152,5 +171,6 @@ export const useTabs = (categoryId: string, category: CategoryResponse | null) =
     startEditingTabPost,
     saveTabPost,
     cancelEditingTabPost,
+    handleDeleteTab,
   };
 };

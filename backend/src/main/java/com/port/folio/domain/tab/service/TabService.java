@@ -77,4 +77,10 @@ public class TabService {
         basicTabRepository.save(basicTab);
         return "수정 완료";
     }
+
+    public void deleteTab(Long tabId){
+        Tab tab = tabRepository.findById(tabId)
+                        .orElseThrow(()->new IllegalArgumentException("탭을 찾을 수 없습니다."));
+        tabRepository.delete(tab);
+    }
 }

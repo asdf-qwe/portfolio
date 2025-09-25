@@ -43,4 +43,10 @@ public class AviV1TabController {
         return ResponseEntity.ok(message);
     }
 
+    @DeleteMapping
+    public ResponseEntity<String> deleteTab(@RequestParam Long tabId){
+        tabService.deleteTab(tabId);
+        return ResponseEntity.ok("삭제 완료");
+    }
+
 }

@@ -4,6 +4,7 @@ import com.port.folio.domain.user.entity.User;
 import com.port.folio.global.Jpa.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Lob;
 import jakarta.persistence.OneToOne;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,7 @@ public class Main extends BaseEntity {
 
     private String greeting;
     private String smallGreeting;
+    @Lob
     @Column(columnDefinition = "TEXT")
     private String introduce;
     private String name;
