@@ -209,7 +209,13 @@ export default function HomePage({ params }: HomePageProps) {
 
   // 전역 편집 모드 토글
   const toggleGlobalEditMode = () => {
-    actions.toggleGlobalEditMode(!!canEdit);
+    if (state.isGlobalEditMode) {
+      // 편집 모드가 켜져있으면 저장 후 모드 종료
+      actions.saveMainData(userId, !!canEdit);
+    } else {
+      // 편집 모드가 꺼져있으면 모드 시작
+      actions.toggleGlobalEditMode(!!canEdit);
+    }
   };
 
   return (
