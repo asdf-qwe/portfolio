@@ -1,6 +1,7 @@
 import Link from "next/link";
 import React from "react";
 import { CategoryResponse } from "@/features/category/types/category";
+import { TagResponse } from "@/features/tag/types/tag";
 import { MAIN_PAGE_CONSTANTS } from "@/constants/mainPageConstants";
 
 interface ProjectsSectionProps {
@@ -19,6 +20,7 @@ interface ProjectsSectionProps {
   onCreateCategory: () => void;
   onGoToPreviousPage: () => void;
   onGoToNextPage: () => void;
+  categoryTags?: { [categoryId: number]: TagResponse[] }; // 카테고리별 태그 데이터
 }
 
 export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
@@ -37,6 +39,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
   onCreateCategory,
   onGoToPreviousPage,
   onGoToNextPage,
+  categoryTags = {},
 }) => {
   // 페이징 계산
   const startIndex = currentPage * itemsPerPage;
@@ -121,31 +124,53 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                     </p>
 
                     <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="px-3 py-1 bg-sky-100 text-sky-700 text-sm font-semibold rounded-full border border-sky-200">
-                        프로젝트
-                      </span>
-                      <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
+                      {categoryTags[category.id] &&
+                      categoryTags[category.id].length > 0 ? (
+                        // 실제 태그들 표시
+                        categoryTags[category.id].slice(0, 3).map((tag) => (
+                          <span
+                            key={tag.tagId}
+                            className="px-3 py-1 bg-sky-100 text-sky-700 text-sm font-semibold rounded-full border border-sky-200"
+                          >
+                            {tag.tagName}
+                          </span>
+                        ))
+                      ) : (
+                        // 태그가 없을 때 기본 태그 표시
+                        <span className="px-3 py-1 bg-sky-100 text-sky-700 text-sm font-semibold rounded-full border border-sky-200">
+                          프로젝트
+                        </span>
+                      )}
+                      {categoryTags[category.id] &&
+                        categoryTags[category.id].length > 3 && (
+                          <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
+                            +{categoryTags[category.id].length - 3}개
+                          </span>
+                        )}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center text-sky-600 font-medium group-hover:text-sky-700 transition-colors duration-300">
+                        <span>자세히 보기</span>
+                        <svg
+                          className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M17 8l4 4m0 0l-4 4m4-4H3"
+                          />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-500 font-medium">
                         {new Date(category.createdAt).toLocaleDateString(
                           "ko-KR"
                         )}
                       </span>
-                    </div>
-
-                    <div className="flex items-center text-sky-600 font-medium group-hover:text-sky-700 transition-colors duration-300">
-                      <span>자세히 보기</span>
-                      <svg
-                        className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M17 8l4 4m0 0l-4 4m4-4H3"
-                        />
-                      </svg>
                     </div>
                   </div>
                 </div>

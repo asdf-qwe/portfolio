@@ -5,6 +5,7 @@ import com.port.folio.domain.post.entity.Introduce;
 import com.port.folio.domain.post.entity.Post;
 import com.port.folio.domain.tab.entity.BasicTab;
 import com.port.folio.domain.tab.entity.Tab;
+import com.port.folio.domain.tag.entity.Tag;
 import com.port.folio.domain.user.entity.User;
 import com.port.folio.global.Jpa.BaseEntity;
 import jakarta.persistence.*;
@@ -45,4 +46,7 @@ public class Category extends BaseEntity {
 
     @OneToOne(mappedBy = "category",cascade = CascadeType.REMOVE)
     private Introduce introduce;
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.REMOVE)
+    private List<Tag> tags;
 }

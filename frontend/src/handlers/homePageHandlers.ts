@@ -13,12 +13,18 @@ import { mainService } from "@/features/main/service/mainService";
 import { MainResponse } from "@/features/main/type/main";
 import { WorkHistory } from "@/features/main/type/main";
 import { KakaoPlace } from "@/constants/mainPageConstants";
+import { TagResponse } from "@/features/tag/types/tag";
+import { tagService } from "@/features/tag/service/tagService";
 import { LocationResponse } from "@/types/location";
 
 export interface HomePageState {
   // 카테고리 관련 상태
   categories: CategoryResponse[];
   categoriesLoading: boolean;
+
+  // 카테고리별 태그 상태
+  categoryTags: { [categoryId: number]: TagResponse[] };
+  categoryTagsLoading: boolean;
 
   // 페이징 관련 상태
   currentPage: number;
@@ -79,6 +85,7 @@ export interface HomePageState {
 export interface HomePageActions {
   // 데이터 로딩 함수들
   fetchCategories: (userId: string) => Promise<void>;
+  fetchCategoryTags: (categories: CategoryResponse[]) => Promise<void>;
   fetchProfileImage: (userId: string) => Promise<void>;
   fetchMainData: (userId: string) => Promise<void>;
   fetchLocationData: (userId: string) => Promise<void>;
@@ -128,11 +135,42 @@ export const createHomePageActions = (
         parseInt(userId)
       );
       setState((prev) => ({ ...prev, categories: categoriesData }));
+
+      // 카테고리가 로드되면 태그도 함께 로드
+      await fetchCategoryTags(categoriesData);
     } catch (error) {
       console.error("카테고리 조회 실패:", error);
       setState((prev) => ({ ...prev, categories: [] }));
     } finally {
       setState((prev) => ({ ...prev, categoriesLoading: false }));
+    }
+  };
+
+  const fetchCategoryTags = async (categories: CategoryResponse[]) => {
+    try {
+      setState((prev) => ({ ...prev, categoryTagsLoading: true }));
+
+      const tagsMap: { [categoryId: number]: TagResponse[] } = {};
+
+      // 각 카테고리에 대한 태그를 병렬로 조회
+      const tagPromises = categories.map(async (category) => {
+        try {
+          const tags = await tagService.getTags(category.id);
+          tagsMap[category.id] = tags;
+        } catch (error) {
+          console.error(`카테고리 ${category.id} 태그 조회 실패:`, error);
+          tagsMap[category.id] = [];
+        }
+      });
+
+      await Promise.all(tagPromises);
+
+      setState((prev) => ({ ...prev, categoryTags: tagsMap }));
+    } catch (error) {
+      console.error("태그 조회 실패:", error);
+      setState((prev) => ({ ...prev, categoryTags: {} }));
+    } finally {
+      setState((prev) => ({ ...prev, categoryTagsLoading: false }));
     }
   };
 
@@ -477,6 +515,7 @@ export const createHomePageActions = (
 
   return {
     fetchCategories,
+    fetchCategoryTags,
     fetchProfileImage,
     fetchMainData,
     fetchLocationData,

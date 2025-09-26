@@ -12,6 +12,8 @@ import { NavigationBar } from "@/components/NavigationBar";
 import { HeroSection } from "@/components/HeroSection";
 import { AboutSection } from "@/components/AboutSection";
 import { ProjectsSection } from "@/components/ProjectsSection";
+import { TagResponse } from "@/features/tag/types/tag";
+import { tagService } from "@/features/tag/service/tagService";
 import { ContactSection } from "@/components/ContactSection";
 
 // 핸들러 import
@@ -36,6 +38,8 @@ export default function HomePage({ params }: HomePageProps) {
     // 카테고리 상태
     categories: [],
     categoriesLoading: true,
+    categoryTags: {},
+    categoryTagsLoading: true,
     currentPage: 0,
     totalPages: 0,
     itemsPerPage: 3, // 한 페이지에 3개의 프로젝트 표시
@@ -295,6 +299,7 @@ export default function HomePage({ params }: HomePageProps) {
         onCreateCategory={handleCreateCategory}
         onGoToPreviousPage={actions.goToPreviousPage}
         onGoToNextPage={actions.goToNextPage}
+        categoryTags={state.categoryTags}
       />
 
       {/* Contact Section */}

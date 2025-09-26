@@ -16,6 +16,7 @@ import { TabPostContent } from "@/components/TabPostContent";
 import { TabNavigation } from "@/components/TabNavigation";
 import { ProjectIntroContent } from "@/components/ProjectIntroContent";
 import { ResourcesContent } from "@/components/ResourcesContent";
+import { TagManager } from "@/components/TagManager";
 import { SlashMenu } from "@/components/SlashMenu";
 
 interface CategoryPageProps {
@@ -205,6 +206,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                 )}
               </div>
               <div className="flex items-center gap-4">
+                <TagManager categoryId={categoryId} canEdit={!!canEdit} />
                 {canEdit && !isEditMode && (
                   <button
                     onClick={handlers.handleDeleteCategory}
