@@ -100,7 +100,7 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
                     {place.place_name}
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
-                    {place.address_name}
+                    {place.road_address_name || place.address_name}
                   </div>
                   {place.category_name && (
                     <div className="text-xs text-gray-400 mt-1">

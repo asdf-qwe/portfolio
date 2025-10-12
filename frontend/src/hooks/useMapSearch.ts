@@ -72,7 +72,8 @@ export const useMapSearch = () => {
       const locationData = {
         lat: parseFloat(place.y),
         lng: parseFloat(place.x),
-        address: place.place_name,
+        address:
+          place.road_address_name || place.address_name || place.place_name,
         email: currentLocation.email || "",
         phoneNumber: currentLocation.phoneNumber || "",
       };
