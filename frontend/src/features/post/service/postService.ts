@@ -42,7 +42,6 @@ export async function updatePost(
   tabId: number
 ): Promise<string> {
   try {
-    console.log(`게시글 수정 시작 - tabId: ${tabId}`);
     const response = await fetch(`${API_BASE_URL}/api/posts?tabId=${tabId}`, {
       method: "PUT",
       headers: {
@@ -58,7 +57,6 @@ export async function updatePost(
       );
     }
 
-    console.log(`게시글 수정 성공 - tabId: ${tabId}`);
     return await response.text();
   } catch (error) {
     console.error(`게시글 수정 실패 - tabId: ${tabId}`, error);
@@ -112,7 +110,6 @@ export async function getPostByTab(
   tabId: number
 ): Promise<PostResponse | null> {
   try {
-    console.log(`탭 게시글 조회 시작 - tabId: ${tabId}`);
     const response = await fetch(`${API_BASE_URL}/api/posts?tabId=${tabId}`, {
       method: "GET",
       headers: {
@@ -121,10 +118,7 @@ export async function getPostByTab(
       credentials: "omit",
     });
 
-    console.log(`탭 게시글 조회 성공 - tabId: ${tabId}`);
-
     if (response.status === 404) {
-      console.log(`탭 ${tabId}에 게시글이 없습니다.`);
       return null;
     }
 
@@ -172,7 +166,6 @@ export async function getPostByTab(
 // 기본 탭 조회 (프로젝트 소개, 자료)
 export async function getBasicTabs(categoryId: number): Promise<BasicTabDto> {
   try {
-    console.log(`기본 탭 조회 시작 - categoryId: ${categoryId}`);
     const response = await fetch(
       `${API_BASE_URL}/api/v1/tab/basic?categoryId=${categoryId}`,
       {
@@ -204,7 +197,6 @@ export async function updateBasicTabContent(
   basicContent1: string
 ): Promise<string> {
   try {
-    console.log(`기본 탭 업데이트 시작 - categoryId: ${categoryId}`);
     const req: BasicTabUpdateReq = { basicContent1 };
     const response = await fetch(
       `${API_BASE_URL}/api/v1/tab/basic?categoryId=${categoryId}`,
@@ -224,7 +216,6 @@ export async function updateBasicTabContent(
       );
     }
 
-    console.log(`기본 탭 업데이트 성공 - categoryId: ${categoryId}`);
     return await response.text();
   } catch (error) {
     console.error(`기본 탭 업데이트 실패 - categoryId: ${categoryId}`, error);

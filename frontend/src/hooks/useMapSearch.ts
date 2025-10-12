@@ -25,8 +25,6 @@ export const useMapSearch = () => {
   useEffect(() => {
     if (!loading && !error) {
       setIsKakaoMapsLoaded(true);
-    } else if (error) {
-      console.error("❌ Kakao Maps SDK 로드 실패:", error);
     }
   }, [loading, error]);
 
@@ -37,12 +35,6 @@ export const useMapSearch = () => {
     }
 
     if (!isKakaoMapsLoaded) {
-      console.error("❌ Kakao Maps SDK가 아직 로드되지 않음");
-      console.log("SDK 로딩 상태:", {
-        loading,
-        error,
-        isLoaded: isKakaoMapsLoaded,
-      });
       setSearchResults([]);
       setIsSearching(false);
       return;
@@ -61,7 +53,6 @@ export const useMapSearch = () => {
         setIsSearching(false);
       });
     } catch (error) {
-      console.error("💥 장소 검색 에러:", error);
       setSearchResults([]);
       setIsSearching(false);
     }

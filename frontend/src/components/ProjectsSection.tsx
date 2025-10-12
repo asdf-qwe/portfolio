@@ -127,7 +127,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                       {categoryTags[category.id] &&
                       categoryTags[category.id].length > 0 ? (
                         // 실제 태그들 표시
-                        categoryTags[category.id].slice(0, 3).map((tag) => (
+                        categoryTags[category.id].slice(0, 4).map((tag) => (
                           <span
                             key={tag.tagId}
                             className="px-3 py-1 bg-sky-100 text-sky-700 text-sm font-semibold rounded-full border border-sky-200"
@@ -142,9 +142,9 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                         </span>
                       )}
                       {categoryTags[category.id] &&
-                        categoryTags[category.id].length > 3 && (
+                        categoryTags[category.id].length > 4 && (
                           <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
-                            +{categoryTags[category.id].length - 3}개
+                            +{categoryTags[category.id].length - 4}개
                           </span>
                         )}
                     </div>

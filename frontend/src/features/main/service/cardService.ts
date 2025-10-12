@@ -78,19 +78,12 @@ class CardService {
         if (response.status === 500) {
           return null;
         }
-        console.log(
-          `getFirst: ${categoryName} 카테고리에 데이터가 없습니다 (${response.status})`
-        );
         return null;
       }
 
       const data = await response.json();
-      console.log("getFirst 조회 성공:", data);
       return data;
     } catch {
-      console.log(
-        `getFirst: ${categoryName} 카테고리 데이터 조회 중 네트워크 오류 - 더미 데이터 사용`
-      );
       // 네트워크 에러 등 발생 시 null 반환 (정상적인 상황으로 처리)
       return null;
     }
@@ -162,20 +155,13 @@ class CardService {
         if (response.status === 500) {
           return null;
         }
-        console.log(
-          `getSecond: ${categoryName} 카테고리에 데이터가 없습니다 (${response.status})`
-        );
         return null;
       }
 
       const data = await response.json();
-      console.log("getSecond 조회 성공:", data);
       return data;
     } catch {
-      console.log(
-        `getSecond: ${categoryName} 카테고리 데이터 조회 중 네트워크 오류 - 더미 데이터 사용`
-      );
-      // 네트워크 에러 등 발생 시 null 반환 (정상적인 상황으로 처리)
+      // 네트워크 에러 등 발생 시 null 반환
       return null;
     }
   }

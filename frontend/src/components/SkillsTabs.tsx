@@ -130,16 +130,12 @@ export default function SkillsTabs({
       try {
         setIsLoading(true);
         const response = await skillCategoryService.getSkillCategory(userId);
-        console.log("서버 응답 전체:", response); // 디버깅용
-        console.log("응답 타입:", typeof response); // 디버깅용
 
         // 응답 데이터 안전하게 처리
         if (response && response.name) {
-          console.log("카테고리 이름:", response.name); // 디버깅용
           const tabKey = categoryNameToTabKey(response.name);
           setActiveTab(tabKey);
         } else {
-          console.warn("응답 데이터가 예상과 다릅니다:", response);
           setActiveTab("skills"); // 기본값 설정
         }
       } catch (error) {
@@ -163,36 +159,25 @@ export default function SkillsTabs({
 
       try {
         setIsCardLoading(true);
-        console.log(
-          `카드 데이터 조회 시작 - userId: ${userId}, category: ${getCurrentTabCategory()}`
-        );
 
         const [firstCard, secondCard] = await Promise.all([
           cardService
             .getFirst(getCurrentTabCategory(), userId)
             .catch((error) => {
-              console.log("getFirst: 데이터 없음 - 더미 데이터 사용");
               return null;
             }),
           cardService
             .getSecond(getCurrentTabCategory(), userId)
             .catch((error) => {
-              console.log("getSecond: 데이터 없음 - 더미 데이터 사용");
               return null;
             }),
         ]);
-
-        console.log("카드 데이터 조회 완료:", { firstCard, secondCard });
 
         setCardData({
           first: firstCard,
           second: secondCard,
         });
       } catch (error) {
-        console.log(
-          "카드 데이터 조회 중 예상치 못한 오류 발생 - 더미 데이터 사용:",
-          error
-        );
         // 조회 실패 시 null 유지 (더미 데이터 사용)
         setCardData({
           first: null,
@@ -225,23 +210,12 @@ export default function SkillsTabs({
       );
       const [firstCard, secondCard] = await Promise.all([
         cardService.getFirst(tabData.categoryName, userId).catch((error) => {
-          console.log(
-            `카테고리 변경 후 getFirst: 데이터 없음 - 더미 데이터 사용 (${tabData.categoryName})`
-          );
           return null;
         }),
         cardService.getSecond(tabData.categoryName, userId).catch((error) => {
-          console.log(
-            `카테고리 변경 후 getSecond: 데이터 없음 - 더미 데이터 사용 (${tabData.categoryName})`
-          );
           return null;
         }),
       ]);
-
-      console.log("카테고리 변경 후 데이터 로드 완료:", {
-        firstCard,
-        secondCard,
-      });
 
       // 카드 데이터 업데이트
       setCardData({
@@ -263,8 +237,6 @@ export default function SkillsTabs({
 
       setActiveTab(newTabKey);
       setIsDropdownOpen(false);
-
-      console.log("카테고리 변경 완료");
     } catch (error) {
       console.error("스킬 카테고리 변경 실패:", error);
       // 에러 발생 시 사용자에게 알림 (선택사항)
@@ -399,14 +371,9 @@ export default function SkillsTabs({
     try {
       setIsCardLoading(true);
       const cardDataToSave = editCardData[position];
-      console.log(
-        `카드 저장 시작 - position: ${position}, category: ${getCurrentTabCategory()}`
-      );
-
       if (position === "first") {
         if (cardData.first) {
           // 수정
-          console.log("기존 카드 수정");
           await cardService.updateFirst(
             cardDataToSave,
             getCurrentTabCategory(),
@@ -414,7 +381,6 @@ export default function SkillsTabs({
           );
         } else {
           // 생성
-          console.log("새 카드 생성");
           await cardService.createFirst(
             cardDataToSave,
             getCurrentTabCategory(),
@@ -424,7 +390,6 @@ export default function SkillsTabs({
       } else {
         if (cardData.second) {
           // 수정
-          console.log("기존 카드 수정");
           await cardService.updateSecond(
             cardDataToSave,
             getCurrentTabCategory(),
@@ -432,7 +397,6 @@ export default function SkillsTabs({
           );
         } else {
           // 생성
-          console.log("새 카드 생성");
           await cardService.createSecond(cardDataToSave, userId);
         }
       }

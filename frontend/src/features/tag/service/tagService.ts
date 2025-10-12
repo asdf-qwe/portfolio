@@ -50,8 +50,6 @@ export class TagService {
    */
   async getTags(categoryId: number): Promise<TagResponse[]> {
     try {
-      console.log(`태그 목록 조회 시작 - categoryId: ${categoryId}`);
-
       const response = await fetch(
         `${API_BASE_URL}/api/v1/tag?categoryId=${categoryId}`,
         {
@@ -63,8 +61,6 @@ export class TagService {
         }
       );
 
-      console.log(`응답 상태: ${response.status} ${response.statusText}`);
-
       if (!response.ok) {
         throw new Error(
           `태그 목록 조회 실패: ${response.status} ${response.statusText}`
@@ -72,7 +68,6 @@ export class TagService {
       }
 
       const tags: TagResponse[] = await response.json();
-      console.log(`태그 목록 조회 성공: ${tags.length}개 태그 발견`);
       return tags;
     } catch (error) {
       console.error("태그 목록 조회 중 오류 발생:", error);
@@ -88,7 +83,6 @@ export class TagService {
    */
   async updateTag(tagData: TagRequest, tagId: number): Promise<string> {
     try {
-      console.log(`태그 수정 시작 - tagId: ${tagId}`);
       const response = await fetch(
         `${API_BASE_URL}/api/v1/tag?tagId=${tagId}`,
         {
@@ -107,7 +101,6 @@ export class TagService {
         );
       }
 
-      console.log(`태그 수정 성공 - tagId: ${tagId}`);
       return await response.text();
     } catch (error) {
       console.error(`태그 수정 실패 - tagId: ${tagId}`, error);
@@ -122,7 +115,6 @@ export class TagService {
    */
   async deleteTag(tagId: number): Promise<string> {
     try {
-      console.log(`태그 삭제 시작 - tagId: ${tagId}`);
       const response = await fetch(
         `${API_BASE_URL}/api/v1/tag?tagId=${tagId}`,
         {
@@ -140,7 +132,6 @@ export class TagService {
         );
       }
 
-      console.log(`태그 삭제 성공 - tagId: ${tagId}`);
       return await response.text();
     } catch (error) {
       console.error(`태그 삭제 실패 - tagId: ${tagId}`, error);

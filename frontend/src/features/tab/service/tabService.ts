@@ -47,8 +47,6 @@ export class TabService {
    */
   async getTabs(categoryId: number): Promise<TabRes[]> {
     try {
-      console.log(`탭 목록 조회 시작 - categoryId: ${categoryId}`);
-
       const response = await fetch(
         `${API_BASE_URL}/api/v1/tab/list?categoryId=${categoryId}`,
         {
@@ -59,8 +57,6 @@ export class TabService {
           credentials: "omit", // 쿠키 사용하지 않음
         }
       );
-
-      console.log(`응답 상태: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
         // 에러 응답 본문도 함께 로그
@@ -82,7 +78,6 @@ export class TabService {
       }
 
       const tabs: TabRes[] = await response.json();
-      console.log(`탭 목록 조회 성공: ${tabs.length}개 탭 발견`);
       return tabs;
     } catch (error) {
       console.error("탭 목록 조회 중 오류 발생:", error);

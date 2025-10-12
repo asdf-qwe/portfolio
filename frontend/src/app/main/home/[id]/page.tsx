@@ -127,8 +127,6 @@ export default function HomePage({ params }: HomePageProps) {
   useEffect(() => {
     if (!loading && !error) {
       setState((prev) => ({ ...prev, isKakaoMapsLoaded: true }));
-    } else if (error) {
-      console.error("❌ Kakao Maps SDK 로드 실패:", error);
     }
   }, [loading, error]);
 

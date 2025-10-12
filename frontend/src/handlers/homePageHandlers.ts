@@ -227,7 +227,6 @@ export const createHomePageActions = (
   // 이벤트 핸들러들
   const handleLogout = async () => {
     // 실제 logout 로직은 컴포넌트에서 처리
-    console.log("로그아웃 처리");
   };
 
   const handleProfileImageUpload = async (
@@ -364,7 +363,6 @@ export const createHomePageActions = (
     if (!keyword.trim()) return;
 
     if (!isKakaoMapsLoaded) {
-      console.error("❌ Kakao Maps SDK가 아직 로드되지 않음");
       setState((prev) => ({ ...prev, searchResults: [], isSearching: false }));
       return;
     }
@@ -381,7 +379,6 @@ export const createHomePageActions = (
         setState((prev) => ({ ...prev, isSearching: false }));
       });
     } catch (error) {
-      console.error("💥 장소 검색 에러:", error);
       setState((prev) => ({ ...prev, searchResults: [], isSearching: false }));
     }
   };
