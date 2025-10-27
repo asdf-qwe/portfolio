@@ -28,29 +28,28 @@ import java.util.UUID;
 public class Category extends BaseEntity {
 
     @Column(name = "public_id", nullable = false, unique = true, updatable = false, length = 36)
-    private String publicId; // 필드 초기화 제거
+    private String publicId;
 
-    @Column(nullable = false) // nullable 제약 추가
+    @Column(nullable = false)
     private String categoryTitle;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Post> posts = new ArrayList<>(); // 복수형 + 초기화
+    private List<Post> posts = new ArrayList<>();
 
-    @Column(nullable = false) // nullable 제약 추가
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Tab> tabs = new ArrayList<>(); // 초기화
-
+    private List<Tab> tabs = new ArrayList<>();
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     @JoinColumn(name = "main_video_id")
     private File mainVideo;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<File> files = new ArrayList<>(); // 초기화
+    private List<File> files = new ArrayList<>();
 
     @OneToOne(mappedBy = "category", cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
     private BasicTab basicTab;
@@ -60,7 +59,7 @@ public class Category extends BaseEntity {
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Tag> tags = new ArrayList<>(); // 초기화
+    private List<Tag> tags = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
