@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { TagResponse, TagRequest } from "@/features/tag/types/tag";
 import { tagService } from "@/features/tag/service/tagService";
+import { CategoryResponse } from "@/features/category/types/category";
 
 interface TagManagerProps {
-  categoryId: string;
+  category: CategoryResponse | null;
   canEdit: boolean;
 }
 
 export const TagManager: React.FC<TagManagerProps> = ({
-  categoryId,
+  category,
   canEdit,
 }) => {
   const [tags, setTags] = useState<TagResponse[]>([]);
@@ -21,9 +22,11 @@ export const TagManager: React.FC<TagManagerProps> = ({
 
   // 태그 목록 조회
   const fetchTags = async () => {
+    if (!category) return;
+
     try {
       setLoading(true);
-      const tagList = await tagService.getTags(parseInt(categoryId));
+      const tagList = await tagService.getTags(category.id);
       setTags(tagList);
     } catch (error) {
       console.error("태그 목록 조회 실패:", error);
@@ -35,12 +38,12 @@ export const TagManager: React.FC<TagManagerProps> = ({
 
   // 태그 생성
   const handleCreateTag = async () => {
-    if (!newTagName.trim()) return;
+    if (!newTagName.trim() || !category) return;
 
     try {
       setIsAddingTag(true);
       const tagRequest: TagRequest = { tagName: newTagName.trim() };
-      await tagService.createTag(tagRequest, parseInt(categoryId));
+      await tagService.createTag(tagRequest, category.id);
       setNewTagName("");
       await fetchTags();
     } catch (error) {
@@ -104,7 +107,7 @@ export const TagManager: React.FC<TagManagerProps> = ({
 
   useEffect(() => {
     fetchTags();
-  }, [categoryId]);
+  }, [category]);
 
   if (loading) {
     return (

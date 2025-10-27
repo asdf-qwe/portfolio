@@ -76,22 +76,19 @@ export class CategoryService {
   }
 
   /**
-   * 특정 카테고리 조회 (ID로)
-   * @param categoryId 카테고리 ID
+   * 특정 카테고리 조회 (publicId로)
+   * @param publicId 카테고리 공개 ID
    * @returns Promise<CategoryResponse>
    */
-  async getCategoryById(categoryId: number): Promise<CategoryResponse> {
+  async getCategoryByPublicId(publicId: string): Promise<CategoryResponse> {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/category/${categoryId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "omit",
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/category/${publicId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "omit",
+      });
 
       if (!response.ok) {
         throw new Error(
@@ -109,26 +106,23 @@ export class CategoryService {
 
   /**
    * 카테고리 수정
-   * @param categoryId 수정할 카테고리 ID
+   * @param publicId 수정할 카테고리 공개 ID
    * @param categoryData 수정할 데이터
    * @returns Promise<CategoryResponse>
    */
   async updateCategory(
-    categoryId: number,
+    publicId: string,
     categoryData: CategoryRequest
   ): Promise<CategoryResponse> {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/category/${categoryId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify(categoryData),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/category/${publicId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(categoryData),
+      });
 
       if (!response.ok) {
         throw new Error(
@@ -146,7 +140,7 @@ export class CategoryService {
 
   /**
    * 카테고리 삭제
-   * @param categoryId 삭제할 카테고리 ID
+   * @param categoryId 삭제할 카테고리 ID (숫자)
    * @returns Promise<string>
    */
   async deleteCategory(categoryId: number): Promise<string> {

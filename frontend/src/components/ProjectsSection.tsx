@@ -83,7 +83,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
             // 카테고리가 있을 때
             currentCategories.map((category, index) => (
               <Link
-                href={`/pof-2/${userId}/${category.id}`}
+                href={`/pof-2/${userId}/${category.publicId}`}
                 key={category.id}
                 className="group block"
               >

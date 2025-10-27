@@ -4,17 +4,20 @@ import {
   getMainVideoByCategory,
 } from "@/features/upload/service/uploadService";
 import { CONSTANTS } from "@/utils/constants";
+import { CategoryResponse } from "@/features/category/types/category";
 
-export const useVideo = (categoryId: string) => {
+export const useVideo = (category: CategoryResponse | null) => {
   const [mainVideoUrl, setMainVideoUrl] = useState<string | null>(null);
   const [isVideoLoading, setIsVideoLoading] = useState(true);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
   useEffect(() => {
     const loadMainVideo = async () => {
+      if (!category) return;
+
       try {
         setIsVideoLoading(true);
-        const videoUrl = await getMainVideoByCategory(parseInt(categoryId));
+        const videoUrl = await getMainVideoByCategory(category.id);
         if (videoUrl) {
           setMainVideoUrl(videoUrl);
         }
@@ -25,14 +28,16 @@ export const useVideo = (categoryId: string) => {
       }
     };
 
-    if (categoryId) {
+    if (category) {
       loadMainVideo();
     }
-  }, [categoryId]);
+  }, [category]);
 
   const handleMainVideoUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
+    if (!category) return;
+
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -50,7 +55,7 @@ export const useVideo = (categoryId: string) => {
 
     try {
       setIsUploadingVideo(true);
-      const videoUrl = await uploadMainVideo(file, parseInt(categoryId));
+      const videoUrl = await uploadMainVideo(file, category.id);
       setMainVideoUrl(videoUrl);
     } catch (error) {
       console.error("동영상 업로드 실패:", error);
