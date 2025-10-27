@@ -27,9 +27,11 @@ export const useTabs = (
   const [isSavingPost, setIsSavingPost] = useState(false);
 
   const fetchTabs = useCallback(async () => {
+    if (!category) return;
+
     try {
       setTabsLoading(true);
-      const tabsData = await tabService.getTabs(parseInt(categoryId));
+      const tabsData = await tabService.getTabs(category.id);
       setTabs(tabsData);
       setActiveTab("intro");
     } catch (error) {
@@ -39,17 +41,14 @@ export const useTabs = (
     } finally {
       setTabsLoading(false);
     }
-  }, [categoryId]);
+  }, [category]);
 
   const handleAddTab = async () => {
-    if (!newTabName.trim()) return;
+    if (!newTabName.trim() || !category) return;
 
     try {
       setIsAddingTab(true);
-      await tabService.createTab(
-        { tabName: newTabName.trim() },
-        parseInt(categoryId)
-      );
+      await tabService.createTab({ tabName: newTabName.trim() }, category.id);
       setNewTabName("");
       await fetchTabs();
     } catch (error) {
@@ -106,7 +105,8 @@ export const useTabs = (
 
       // 게시글이 존재하지 않으면 생성, 존재하면 수정
       if (!existingPostFromServer) {
-        await createPost(postData, parseInt(categoryId), tabId);
+        if (!category) throw new Error("카테고리 정보가 없습니다.");
+        await createPost(postData, category.id, tabId);
       } else {
         await updatePost(postData, tabId);
       }

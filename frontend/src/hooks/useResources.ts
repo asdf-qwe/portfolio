@@ -4,15 +4,18 @@ import {
   deleteFile,
   FileResource,
 } from "@/features/upload/service/uploadService";
+import { CategoryResponse } from "@/features/category/types/category";
 
-export const useResources = (categoryId: string) => {
+export const useResources = (category: CategoryResponse | null) => {
   const [resources, setResources] = useState<FileResource[]>([]);
   const [isResourcesLoading, setIsResourcesLoading] = useState(true);
 
   const loadResources = useCallback(async () => {
+    if (!category) return;
+
     try {
       setIsResourcesLoading(true);
-      const resourcesFromApi = await getFilesByCategory(parseInt(categoryId));
+      const resourcesFromApi = await getFilesByCategory(category.id);
       setResources(resourcesFromApi);
     } catch (error) {
       console.error("자료 로딩 실패:", error);
@@ -20,7 +23,7 @@ export const useResources = (categoryId: string) => {
     } finally {
       setIsResourcesLoading(false);
     }
-  }, [categoryId]);
+  }, [category]);
 
   const handleUploadSuccess = async () => {
     setResources([]);
@@ -47,10 +50,10 @@ export const useResources = (categoryId: string) => {
   };
 
   useEffect(() => {
-    if (categoryId) {
+    if (category) {
       loadResources();
     }
-  }, [categoryId, loadResources]);
+  }, [category, loadResources]);
 
   return {
     resources,

@@ -289,7 +289,11 @@ export const createCategoryPageHandlers = (
     if (!confirmDelete) return;
 
     try {
-      await categoryService.deleteCategory(parseInt(categoryId));
+      if (!category) {
+        alert("카테고리 정보를 찾을 수 없습니다.");
+        return;
+      }
+      await categoryService.deleteCategory(category.id);
       alert("카테고리가 성공적으로 삭제되었습니다.");
       router.push(`/pof-1/${userId}`);
     } catch (error) {

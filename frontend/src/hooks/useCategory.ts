@@ -17,7 +17,7 @@ export const useCategory = (userId: string, categoryId: string) => {
           parseInt(userId)
         );
         const foundCategory = categories.find(
-          (cat) => cat.id === parseInt(categoryId)
+          (cat) => cat.publicId === categoryId
         );
 
         if (foundCategory) {

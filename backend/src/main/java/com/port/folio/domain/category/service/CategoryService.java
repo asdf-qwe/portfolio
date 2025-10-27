@@ -49,6 +49,7 @@ public class CategoryService {
         return categories.stream()
                 .map(category -> new CategoryResponse(
                         category.getId(),
+                        category.getPublicId(),
                         category.getCategoryTitle(),
                         category.getCreatedAt(),
                         category.getUpdatedAt()

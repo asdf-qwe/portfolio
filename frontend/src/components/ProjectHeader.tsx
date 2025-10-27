@@ -97,7 +97,7 @@ export default function ProjectHeader() {
       setNewCategoryTitle("");
 
       // 새로 생성된 카테고리 페이지로 이동
-      router.push(`/pof-2/${user.id}/${newCategory.id}`);
+      router.push(`/pof-2/${user.id}/${newCategory.publicId}`);
 
       alert(`"${newCategory.categoryTitle}" 카테고리가 생성되었습니다!`);
     } catch (error) {
@@ -158,8 +158,8 @@ export default function ProjectHeader() {
                   const userIdFromPath = getUserIdFromPath();
                   const targetUserId = userIdFromPath || user?.id;
                   const categoryPath = targetUserId
-                    ? `/pof-2/${targetUserId}/${category.id}`
-                    : `/main/category/${category.id}`;
+                    ? `/pof-2/${targetUserId}/${category.publicId}`
+                    : `/main/category/${category.publicId}`;
                   return (
                     <li key={category.id} className="relative">
                       <Link

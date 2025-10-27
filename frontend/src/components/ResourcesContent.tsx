@@ -4,13 +4,15 @@ import { isImageFile, formatFileSize, formatDate } from "@/utils/categoryUtils";
 import { CONSTANTS } from "@/utils/constants";
 import { FileResource } from "@/features/upload/service/uploadService";
 
+import { CategoryResponse } from "@/features/category/types/category";
+
 interface ResourcesContentProps {
   canEdit: boolean | null;
   handleUploadSuccess: (url: string, fileName: string) => void;
   isResourcesLoading: boolean;
   resources: FileResource[];
   handleDeleteResource: (id: string) => Promise<void>;
-  categoryId: string;
+  category: CategoryResponse | null;
 }
 
 export const ResourcesContent: React.FC<ResourcesContentProps> = ({
@@ -19,7 +21,7 @@ export const ResourcesContent: React.FC<ResourcesContentProps> = ({
   isResourcesLoading,
   resources,
   handleDeleteResource,
-  categoryId,
+  category,
 }) => {
   return (
     <div>
@@ -31,14 +33,14 @@ export const ResourcesContent: React.FC<ResourcesContentProps> = ({
       {/* 전체 폭 사용 */}
       <div className="space-y-6">
         {/* 파일 업로드 섹션 */}
-        {canEdit && (
+        {canEdit && category && (
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
               새 자료 업로드
             </h3>
             <FileUpload
               onUploadSuccess={handleUploadSuccess}
-              categoryId={parseInt(categoryId)}
+              categoryId={category.id}
               allowedTypes={CONSTANTS.FILE_TYPES}
               maxSizeMB={50}
             />

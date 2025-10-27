@@ -37,10 +37,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     userId,
     categoryId
   );
-  const { introduce, setIntroduce, introLoading, saveIntroduce } = useIntroduce(
-    categoryId,
-    category?.categoryTitle
-  );
+  const { introduce, setIntroduce, introLoading, saveIntroduce } =
+    useIntroduce(category);
   const {
     tabs,
     tabsLoading,
@@ -65,13 +63,13 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     isResourcesLoading,
     handleUploadSuccess,
     handleDeleteResource,
-  } = useResources(categoryId);
+  } = useResources(category);
   const {
     mainVideoUrl,
     isVideoLoading,
     isUploadingVideo,
     handleMainVideoUpload,
-  } = useVideo(categoryId);
+  } = useVideo(category);
 
   // 로컬 상태
   const [isEditMode, setIsEditMode] = useState(false);
@@ -206,7 +204,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                 )}
               </div>
               <div className="flex items-center gap-4">
-                <TagManager categoryId={categoryId} canEdit={!!canEdit} />
+                <TagManager category={category} canEdit={!!canEdit} />
                 {canEdit && !isEditMode && (
                   <button
                     onClick={handlers.handleDeleteCategory}
@@ -289,7 +287,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                   isResourcesLoading={isResourcesLoading}
                   handleUploadSuccess={handleUploadSuccess}
                   handleDeleteResource={handleDeleteResource}
-                  categoryId={categoryId}
+                  category={category}
                 />
               )}
 

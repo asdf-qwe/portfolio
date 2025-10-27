@@ -9,7 +9,8 @@ import java.time.LocalDateTime;
 @Getter
 @AllArgsConstructor
 public class CategoryResponse {
-    private Long id;           // 추가 권장
+    private Long id;
+    private String publicId;           // 추가 권장
     private String categoryTitle;
     private LocalDateTime createdAt;  // 추가 권장
     private LocalDateTime updatedAt;  // 추가 권장
