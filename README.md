@@ -1,4 +1,4 @@
-<img src="https://capsule-render.vercel.app/api?type=waving&&color=0:C9E6F0,100:78B3CE&height=300&section=header&text=FolioPro&fontColor=FFFFFF&fontSize=90" style="width: 100%; height: auto;" />
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?size=30&color=78B3CE&lines=RE:cord;Record+Your+Work+and+Career)](https://git.io/typing-svg)
 
 # Portfolio – 나의 개발 포트폴리오 프로젝트
 
