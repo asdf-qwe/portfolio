@@ -1,3 +1,5 @@
+<img src="https://capsule-render.vercel.app/api?type=waving&&color=0:C9E6F0,100:78B3CE&height=300&section=header&text=RE:cord&fontColor=FFFFFF&fontSize=90" style="width: 100%; height: auto;" />
+
 # Portfolio – 나의 개발 포트폴리오 프로젝트
 
 ## 📌 프로젝트 소개  
