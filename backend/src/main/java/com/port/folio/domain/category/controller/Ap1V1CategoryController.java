@@ -33,6 +33,6 @@ public class Ap1V1CategoryController {
     @DeleteMapping
     public ResponseEntity<String> deleteCategory(@RequestParam Long categoryId){
         categoryService.deleteCategory(categoryId);
-        return ResponseEntity.ok("삭제 되었습니다");
+        return ResponseEntity.ok("삭제 되었습니다.");
     }
 }
