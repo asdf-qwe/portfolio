@@ -1,5 +1,3 @@
-[![Typing SVG](https://readme-typing-svg.herokuapp.com?size=30&color=78B3CE&lines=RE:cord;Record+Your+Work+and+Career)](https://git.io/typing-svg)
-
 # Portfolio – 나의 개발 포트폴리오 프로젝트
 
 ## 📌 프로젝트 소개  
